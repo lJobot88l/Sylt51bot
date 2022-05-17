@@ -1,0 +1,519 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using DSharpPlus;
+using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
+using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Attributes;
+using Newtonsoft.Json;
+using static Sylt51bot.Program;
+using Classes;
+using CAttributes;
+using System.Linq;
+namespace Sylt51bot
+{
+	public static class LevelSystem
+	{
+
+		public static async void DoTheTimer(MessageCreateEventArgs e)
+		{
+			try
+			{
+				if (e.Channel.IsPrivate == false && servers.FindIndex(x => x.Id == e.Guild.Id) != -1)
+				{
+					RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
+					if (e.Message.Author.IsBot == false && (!s.channelxpexclude.Contains(e.Guild.Id)))
+					{
+						if (s.timedoutedusers.ContainsKey(e.Message.Author.Id))
+						{
+							if (DateTime.Now - s.timedoutedusers[e.Message.Author.Id] >= s.CoolDown)
+							{
+								s.timedoutedusers[e.Message.Author.Id] = DateTime.Now;
+								AddXp(e);
+							}
+						}
+						else
+						{
+							s.timedoutedusers.Add(e.Message.Author.Id, DateTime.Now);
+							AddXp(e);
+						}
+						int userslevel = 0;
+						int j = 0;
+						bool isDone = false;
+						try
+						{
+							foreach (LevelRole i in s.lvlroles)
+							{
+								if (i.XpReq <= s.xplist[e.Author.Id] && i.RoleId != 0)
+								{
+									userslevel++;
+									j++;
+									if (!(await e.Guild.GetMemberAsync(e.Author.Id)).Roles.Contains(e.Guild.GetRole(i.RoleId)))
+									{
+										await (await e.Guild.GetMemberAsync(e.Author.Id)).GrantRoleAsync(e.Guild.GetRole(i.RoleId));
+										if (j == s.lvlroles.Count - 1)
+										{
+											isDone = true;
+											break;
+										}
+									}
+								}
+								else
+								{
+									if (i.RoleId != 0 && (await e.Guild.GetMemberAsync(e.Author.Id)).Roles.Contains(e.Guild.GetRole(i.RoleId)))
+									{
+										await (await e.Guild.GetMemberAsync(e.Author.Id))
+										.RevokeRoleAsync(
+											e
+											.Guild
+											.GetRole(
+												s.lvlroles[
+													s.lvlroles.FindIndex(
+														x => x.RoleId == i.RoleId
+													)
+												]
+												.RoleId
+											)
+										);
+									}
+								}
+							}
+							if (isDone == true)
+							{
+								await discord.SendMessageAsync(e.Channel, new DiscordEmbedBuilder { Description = $"**{e.Author.Mention}**'s level changed to level **{userslevel}**!", Color = DiscordColor.Green });
+							}
+							servers[servers.FindIndex(x => x.Id == e.Guild.Id)].xplist[e.Message.Author.Id] = s.xplist[e.Message.Author.Id];
+							File.WriteAllText("config/xpcfg.json", JsonConvert.SerializeObject(servers));
+						}
+						catch (DSharpPlus.Exceptions.UnauthorizedException)
+						{
+							await e.Channel.SendMessageAsync("I don't have permission to manage roles!");
+						}
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				await AlertException(e, ex);
+			}
+		}
+		public static async void AddXp(MessageCreateEventArgs e, int amount = -1)
+		{
+			if(servers.FindIndex(x=> x.Id == e.Guild.Id) != -1)
+			{
+				RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
+				if (amount == -1)
+				{
+					amount = new Random().Next(s.MinXp, s.MaxXp + 1);
+				}
+				if (s.xplist.ContainsKey(e.Message.Author.Id))
+				{
+					s.xplist[e.Message.Author.Id] += amount;
+				}
+				else
+				{
+					s.xplist.Add(e.Message.Author.Id, amount);
+				}
+				servers[servers.IndexOf(s)] = s;
+				File.WriteAllText("config/xpcfg.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+			}
+			else
+			{
+				await e.Message.RespondAsync(new DiscordEmbedBuilder { Description = "Dieser server ist nicht im xp-System registriert D:!\nBenutze `=lvledit` um anzufangen", Color = DiscordColor.Red });
+			}
+		}
+	}
+
+	public class LevelCommands : BaseCommandModule
+	{
+		[Command("lvlroles"), CommandClass("LevelCommands"), RequireGuild(), Description("Displays the level roles with their required score\n\nUsage:\n```=lvlroles```"), RequireBotPermissions(Permissions.SendMessages)]
+		public async Task LvlRoles(CommandContext e)
+		{
+			try
+			{
+				DiscordEmbedBuilder embed = new DiscordEmbedBuilder { Color = DiscordColor.Green, Title = $"Level Rollen für {e.Guild.Name}", Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail { Url = e.Guild.IconUrl } };
+				if (servers.FindIndex(x => x.Id == e.Guild.Id) != -1)
+				{
+					List<LevelRole> roles = servers.Find(x => x.Id == e.Guild.Id).lvlroles;
+					int i = 0;
+					string embedstring = "";
+					if (roles.Count() == 0)
+					{
+						embedstring += "Es gibt noch keine Rollen die mit Leveln verbunden sind!";
+					}
+					else
+					{
+						foreach (LevelRole kvp in roles)
+						{
+							if (kvp.XpReq != 0)
+							{
+								embedstring += $"**`[{i + 1}]`** | <@&{kvp.RoleId}> (**{kvp.XpReq}**xp)\n";
+								i++;
+							}
+						}
+					}
+					embed.AddField("Chatte um XP zu sammeln!", embedstring, true);
+				}
+				else
+				{
+					embed.Description = "Dieser Server ist nicht im xp-System registriert D:!\nBenutze `=lvledit` um anzufangen";
+				}
+				await discord.SendMessageAsync(await discord.GetChannelAsync(e.Message.Channel.Id), embed);
+			}
+			catch (Exception ex)
+			{
+				await AlertException(e, ex);
+			}
+		}
+
+		[Command("top"), CommandClass("LevelCommands"), RequireGuild(), Description("Displays the servers level leaderboard\n\nUsage:\n```=top [page, defaults to 1]```"), Aliases("lb")]
+		public async Task Leaderboard(CommandContext e, int page = 1)
+		{
+			try
+			{
+				if (servers.FindIndex(x => x.Id == e.Guild.Id) != -1)
+				{
+					RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
+					DiscordEmbedBuilder embed = new DiscordEmbedBuilder { Footer = new DiscordEmbedBuilder.EmbedFooter { Text = $"Page {page}/{Math.Ceiling((double)s.xplist.Count / 5)}" }, Color = DiscordColor.Green, Title = "Server XP rangliste", Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail { Url = e.Guild.IconUrl } };
+					var sortedleederboard = from entry in s.xplist orderby entry.Value descending select entry;
+
+					string embedstring = "";
+					int i = 0;
+					foreach (KeyValuePair<ulong, int> kvp in sortedleederboard)
+					{
+						if (i >= (page - 1) * 5)
+						{
+							int userslevel = 0;
+							foreach (var j in s.lvlroles)
+							{
+								if (j.XpReq <= s.xplist[kvp.Key] && j.XpReq != 0)
+								{
+									userslevel++;
+								}
+							}
+							string role = "";
+							if (userslevel != 0)
+							{
+								role = $"<@&{s.lvlroles[userslevel].RoleId.ToString()}>";
+							}
+							else
+							{
+								role = "Keine Rolle";
+							}
+							if (kvp.Key != e.Message.Author.Id)
+							{
+								embedstring += $"**```#{i + 1} | {(await e.Guild.GetMemberAsync(kvp.Key)).Username}``` {kvp.Value}xp | [{role}]**\n\n";
+							}
+							else
+							{
+								embedstring += $"**```< #{i + 1} | {(await e.Guild.GetMemberAsync(kvp.Key)).Username} >```{kvp.Value}xp | [{role}]**\n\n";
+							}
+							i++;
+							if (i == ((page - 1) * 5) + 5)
+							{
+								break;
+							}
+						}
+						else
+						{
+							i++;
+						}
+					}
+					embed.Description = embedstring;
+
+					await discord.SendMessageAsync(e.Channel, embed);
+				}
+				else
+				{
+					await discord.SendMessageAsync(e.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = "**No users have ever earned any XP so far.**" });
+				}
+			}
+			catch (Exception ex)
+			{
+				await AlertException(e, ex);
+			}
+		}
+
+		[Command("rank"), CommandClass("LevelCommands"), RequireGuild(), Description("Displays yours or another users level\n\nUsage:\n```=rank [ ID / @mention ]```"), Aliases("lvl", "level"), RequireBotPermissions(Permissions.SendMessages)]
+		public async Task Rank(CommandContext e, DiscordUser user = null)
+		{
+			try
+			{
+				if (user == null)
+				{
+					user = e.Message.Author;
+				}
+				if (servers.FindIndex(x => x.Id == e.Guild.Id) != -1)
+				{
+					RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
+					if (s.xplist.ContainsKey(user.Id))
+					{
+						int userslevel = 0;
+						foreach (var i in s.lvlroles)
+						{
+							if (i.XpReq <= s.xplist[user.Id] && i.XpReq != 0)
+							{
+								userslevel++;
+							}
+						}
+						var sortedleederboard = from entry in s.xplist orderby entry.Value descending select entry;
+						DiscordEmbedBuilder embed = new DiscordEmbedBuilder
+						{
+							Title = "Server Rangkarte",
+							Description = $"**```{user.Username}#{user.Discriminator}  | Level {userslevel} | Rang #{sortedleederboard.ToList().FindIndex(x => x.Key == user.Id) + 1}```**\n",
+							Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail { Url = user.AvatarUrl }
+						};
+						if (userslevel == 0)
+						{
+							embed.Color = DiscordColor.Black;
+						}
+						else
+						{
+							embed.Color = e.Guild.GetRole(s.lvlroles[userslevel].RoleId).Color;
+							embed.Description += $"**[<@&{s.lvlroles[userslevel].RoleId}>]\n**";
+						}
+						string progstring = "";
+						embed.AddField("Gesamt", $"**```{s.xplist[user.Id]}xp```**", true);
+						if (userslevel < s.lvlroles.Count() - 1)
+						{
+							// 🟦
+							for (int i = 0; i < 10; i++)
+							{
+								if (s.xplist[user.Id] - s.lvlroles[userslevel].XpReq >= ((s.lvlroles[userslevel + 1].XpReq - s.lvlroles[userslevel].XpReq) / 10) * i)
+								{
+									progstring += "🟦";
+								}
+								else
+								{
+									progstring += "⬜";
+								}
+							}
+							embed.AddField("Fortschritt", $"**```{s.xplist[user.Id] - s.lvlroles[userslevel].XpReq}xp / {s.lvlroles[userslevel + 1].XpReq - s.lvlroles[userslevel].XpReq}xp```**\n" + progstring, true);
+							embed.AddField("Nächstes level", $"**[Level {s.lvlroles.IndexOf(s.lvlroles[userslevel + 1])}]** | **<@&{s.lvlroles[userslevel + 1].RoleId}> | {s.lvlroles[userslevel + 1].XpReq} Gesamt XP benötigt**", false);
+						}
+						else
+						{
+							embed.Fields[0].Value = "Höchstes Level erreicht!";
+							// 🟦
+							for (int i = 0; i < 10; i++)
+							{
+								progstring += "🟦";
+							}
+							embed.AddField("Fortschritt", progstring, true);
+						}
+						await discord.SendMessageAsync(await discord.GetChannelAsync(e.Message.Channel.Id), embed);
+					}
+					else
+					{
+						await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Description = $"**{user.Username}** hat noch kein XP gesammelt!", Color = DiscordColor.Green });
+					}
+				}
+				else
+				{
+					await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Description = $"{e.Message.Author.Username}, dieser Server hat noch kein Levelsystem!", Color = DiscordColor.Green });
+				}
+			}
+			catch (Exception ex)
+			{
+				await AlertException(e, ex);
+			}
+		}
+
+		[Command("lvledit"), CommandClass("LevelCommands"), RequireGuild(), Description("Edits a level role in the server.\nIf no score is given, the role will be removed as a level role. Else the required score will be updated\n\nUsage:\n```=lvladd < ID / @mention > [score]```"), RequireUserPermissions(Permissions.ManageGuild), RequireBotPermissions(Permissions.ManageRoles & Permissions.SendMessages)]
+		public async Task LvlAdd(CommandContext e, DiscordRole role, int score = 0)
+		{
+			try
+			{
+
+				if (e.Guild.Roles.Values.Contains<DiscordRole>(role))
+				{
+					bool didExist = false;
+					if (servers.FindIndex(x => x.Id == e.Guild.Id) != -1)
+					{
+						RegisteredServer s = servers[servers.FindIndex(x => x.Id == e.Guild.Id)];
+						if (s.lvlroles.Find(x => x.XpReq == 0) == null)
+						{
+							s.lvlroles.Add(new LevelRole { XpReq = 0, RoleId = 0, Name = "Keine Rolle" });
+						}
+						if (s.lvlroles.Find(x => x.RoleId == role.Id) != null)
+						{
+							didExist = true;
+							var therole = s.lvlroles.Find(x => x.RoleId == role.Id);
+							if (score <= 0)
+							{
+								s.lvlroles.Remove(s.lvlroles[s.lvlroles.FindIndex(x => x.RoleId == role.Id)]);
+								await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Description = $"Rolle {role.Name} gelöscht", Color = DiscordColor.Green });
+								if (s.lvlroles.Count() == 1 && s.lvlroles[0].XpReq == 0)
+								{
+									servers.Remove(servers.Find(x => x.Id == e.Guild.Id));
+								}
+							}
+							else
+							{
+								s.lvlroles.Find(x => x.RoleId == role.Id);
+								s.lvlroles[s.lvlroles.FindIndex(x => x.RoleId == role.Id)].XpReq = score;
+								var sortedleederboard = from entry in s.lvlroles orderby entry.XpReq ascending select entry;
+								var list = sortedleederboard.ToList();
+								s.lvlroles = list;
+
+								await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Description = $"Rolle {role.Name} bearbeitet", Color = DiscordColor.Green });
+							}
+						}
+						else
+						{
+							s.lvlroles.Add(new LevelRole { Name = role.Name, XpReq = score, RoleId = role.Id });
+							var sortedleederboard = from entry in s.lvlroles orderby entry.XpReq ascending select entry;
+							var list = sortedleederboard.ToList();
+							s.lvlroles = list;
+						}
+						servers[servers.FindIndex(x => x.Id == e.Guild.Id)] = s;
+					}
+					else
+					{
+						RegisteredServer s = new RegisteredServer { Id = e.Guild.Id };
+						List<LevelRole> newlvlroles = new List<LevelRole>();
+						s.lvlroles.Add(new LevelRole { Name = role.Name, XpReq = score, RoleId = role.Id });
+						var sortedleederboard = from entry in s.lvlroles orderby entry.XpReq ascending select entry;
+						var list = sortedleederboard.ToList();
+						s.lvlroles = list;
+						servers.Add(s);
+					}
+					if (didExist == false)
+					{
+						await e.Message.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Rolle **{role.Name}** wurde zu **{e.Guild.Name}**'s Levelrollen hinzugefügt!" });
+					}
+					File.WriteAllText("config/xpcfg.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+				}
+				else
+				{
+					await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Rolle **{role.Name}** existiert nicht in diesem Server!" });
+				}
+			}
+			catch (Exception ex)
+			{
+				await AlertException(e, ex);
+			}
+		}
+
+		[Command("xpedit"), CommandClass("LevelCommands"), RequireGuild(), Description("Edits a users xp.\nIf no xp amount is given, it will be reset to 0, else it will be updated to the given amount\n\nUsage:\n```=addxp < ID / @mention > [xp]```"), RequireUserPermissions(Permissions.ManageGuild), RequireBotPermissions(Permissions.SendMessages)]
+		public async Task AddXpUser(CommandContext e, DiscordUser user, int xp = 0)
+		{
+			try
+			{
+				if (xp >= 0)
+				{
+					if (servers.FindIndex(x => x.Id == e.Guild.Id) != -1)
+					{
+						if (await e.Guild.GetMemberAsync(user.Id) != null)
+						{
+							RegisteredServer s = servers[servers.FindIndex(x => x.Id == e.Guild.Id)];
+							if (s.xplist.ContainsKey(user.Id))
+							{
+								if (xp == 0)
+								{
+									await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"**{user.Username}#{user.Discriminator}**'s xp wurde auf 0 gesetzt!\n**```Vorher: {s.xplist[user.Id]}\nNachher: 0```**" });
+									s.xplist.Remove(user.Id);
+								}
+								else
+								{
+									await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"**{user.Username}#{user.Discriminator}**'s xp wurde bearbeitet!\n**```Vorher: {s.xplist[user.Id]}xp\nNachher: {xp}xp```**" });
+									s.xplist[user.Id] = xp;
+								}
+							}
+							else
+							{
+								s.xplist.Add(user.Id, xp);
+								await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"**{xp}**xp wurde zu **{user.Username}#{user.Discriminator}** hinzugefügt! **```Vorher: 0\nNachher: {xp}xp```**" });
+							}
+							servers[servers.FindIndex(x => x.Id == e.Guild.Id)] = s;
+						}
+						else
+						{
+							await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = $"Nutzer nicht gefunden!" });
+						}
+						File.WriteAllText("config/xpcfg.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+					}
+					else
+					{
+						await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = $"Es gibt kein xp-System in diesem Server!" });
+					}
+				}
+				else
+				{
+					await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = $"Du kannst keine negativen xp hinzufügen!" });
+				}
+			}
+			catch (Exception ex)
+			{
+				await AlertException(e, ex);
+			}
+		}
+
+		[Command("channeledit"), CommandClass("LevelCommands"), Description("Enables/Disables the xp gaining in the given channel\n\nUsage:\n```=channeledit < ID / #mention >```"), RequireGuild(), RequireUserPermissions(Permissions.ManageGuild), RequireBotPermissions(Permissions.SendMessages)]
+		public async Task ChannelEdit(CommandContext e, DiscordChannel channel)
+		{
+			try
+			{
+				if (servers.FindIndex(x => x.Id == e.Guild.Id) != -1)
+				{
+					RegisteredServer s = servers[servers.FindIndex(x => x.Id == e.Guild.Id)];
+					if (e.Guild.GetChannel(channel.Id) != null)
+					{
+						if (s.channelxpexclude.Contains(channel.Id))
+						{
+							s.channelxpexclude.Remove(channel.Id);
+							await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Kanal {channel.Mention} ist nicht mehr ausgenommen vom xp verdienen!" });
+							if (s.channelxpexclude.Count == 0)
+							{
+								servers[servers.FindIndex(x => x.Id == e.Guild.Id)].channelxpexclude.Clear();
+							}
+						}
+						else
+						{
+							s.channelxpexclude.Add(channel.Id);
+							await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Kanal {channel.Mention} ist nun vom xp verdienen ausgenommen!" });
+						}
+						servers[servers.FindIndex(x => x.Id == e.Guild.Id)] = s;
+						File.WriteAllText("config/xpcfg.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+					}
+					else
+					{
+						await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = $"Kanal nicht gefunden!" });
+					}
+				}
+				else
+				{
+					await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = $"Es gibt kein levelsystem in diesem Server!" });
+				}
+			}
+			catch (Exception ex)
+			{
+				await AlertException(e, ex);
+			}
+		}
+
+		[Command("xpreset"), CommandClass("LevelCommands"), RequireGuild(), RequireAuth, Hidden()]
+		public async Task ResetXp(CommandContext e, ulong serverid = 0)
+		{
+			try
+			{
+				if (serverid == 0)
+				{
+					servers[servers.FindIndex(x => x.Id == e.Guild.Id)].xplist = new Dictionary<ulong, int>();
+				}
+				else
+				{
+					servers[servers.FindIndex(x => x.Id == serverid)].xplist = new Dictionary<ulong, int>();
+				}
+				File.WriteAllText("config/xpcfg.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+				await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Reset xp for server {serverid}!" });
+			}
+			catch (Exception ex)
+			{
+				await AlertException(e, ex); // add addxp command for specific user!
+			}
+		}
+	}
+}
