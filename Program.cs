@@ -8,7 +8,7 @@ using DSharpPlus.EventArgs;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using Classes;
-using CAttributes;
+using System.Globalization;
 
 namespace Sylt51bot
 {
@@ -74,7 +74,24 @@ namespace Sylt51bot
 				commands.RegisterCommands<BotAdminCommands>();
                 discord.MessageCreated += async (client, e) =>
                 {
-
+					if(!e.Message.Author.IsBot && e.Message.Content.Contains("€"))
+					{
+						// get the number of euros from text
+						string[] split = e.Message.Content.Split('€');
+						string euroamt = split[0].Substring(split[0].LastIndexOf(" ") + 1);
+						if(euroamt.Contains(","))
+						{
+							euroamt = euroamt.Replace(",", ".");
+						}
+						if(double.TryParse(euroamt, out double amt))
+						{
+							cInf.SchuldenDerDDR -= amt;
+							long Schulden = 86300000000;
+							await e.Message.RespondAsync($"Das sind {Math.Round(amt * 1.95583, 0)} Mark. {Math.Round(amt * 1.95583 * 2, 0)} Ostmark. {Math.Round(amt * 1.95583 * 2 * 10, 0)} Ostmark aufm Schwarzmarkt.\nVon den bisherigen Zwietracht-Pfostierungen hätte man {Math.Round(( 1 - (double)cInf.SchuldenDerDDR/(double)Schulden) * (double)100, 5) } % der DDR entschulden können.");
+							File.WriteAllText("config/mconfig.json", Newtonsoft.Json.JsonConvert.SerializeObject(cInf));
+						}
+						
+					}
                 };
 
                 discord.SocketClosed += async (client, e) =>
@@ -266,6 +283,7 @@ namespace Classes
 		public string DiscordInvite { get; set; } = null;
 		public string GitHub { get; set; } = null;
         public List<ulong> AuthUsers { get; set; } = null;
+		public double SchuldenDerDDR { get; set; } = 86300000000;
 	}
 
 	public class RegisteredServer
