@@ -59,5 +59,31 @@ namespace Sylt51bot
 				await AlertException(e, ex);
 			}
 		}
+
+		[Command("resetschulden"), Description("Bearbeitet die Schulden der DDR!\n\nBenutzung:\n```=resetschulden (DMark)```"), CommandClass("OwnerCommands"), RequireAuth()]
+		public async Task ResetSchulden(CommandContext e, long newSchulden = 86000000000)
+		{
+			try
+			{
+				if(newSchulden <= 86000000000)
+				{
+					cInf.SchuldenDerDDR = newSchulden;
+					File.WriteAllText("config/mconfig.json", Newtonsoft.Json.JsonConvert.SerializeObject(cInf));
+					await e.Message.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Schulden wurden auf `{newSchulden}` DM gesetzt" });
+				}
+				else
+				{
+					await e.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = $"Schulden können nicht größer als 86M DM sein" });
+				}
+				if(newSchulden <= 0)
+				{
+					await e.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = $"Schulden können nicht kleiner als 0 DM sein" });
+				}
+			}
+			catch (Exception ex)
+			{
+				await AlertException(e, ex);
+			}
+		}
 	}
 }
