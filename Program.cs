@@ -85,10 +85,10 @@ namespace Sylt51bot
 							euroamt = euroamt.Replace(",", ".");
 						}
 						long Schulden = 86300000000;
-						if(double.TryParse(euroamt, out double amt) && amt <= 1000 && cInf.SchuldenDerDDR - amt * 1.95583 >= 0 && amt > 0)
+						if(double.TryParse(euroamt, out double amt) && amt <= 1000 && amt > 0 && !double.IsNaN(amt))
 						{
 							cInf.SchuldenDerDDR -= amt * 1.95583;
-							await e.Message.RespondAsync($"Das sind {Math.Round(amt * 1.95583, 1)} Mark. {Math.Round(amt * 1.95583 * 2, 1)} Ostmark. {Math.Round(amt * 1.95583 * 2 * 10, 1)} Ostmark aufm Schwarzmarkt.\nVon den bisherigen Zwietracht-Pfostierungen hätte man {Math.Round(( 1 - (double)cInf.SchuldenDerDDR/(double)Schulden) * (double)100, 5) } % der DDR entschulden können.");
+							await e.Message.RespondAsync($"Das sind {Math.Round(amt * 1.95583, 1)} Mark. {Math.Round(amt * 1.95583 * 2, 1)} Ostmark. {Math.Round(amt * 1.95583 * 2 * 10, 1)} Ostmark aufm Schwarzmarkt.\nVon den bisherigen Zwietracht-Pfostierungen hätte man {(1 - (double)cInf.SchuldenDerDDR/(double)Schulden).ToString("##0.#####%") } der DDR entschulden können.");
 							File.WriteAllText("config/mconfig.json", Newtonsoft.Json.JsonConvert.SerializeObject(cInf));
 						}
 						
