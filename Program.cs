@@ -75,23 +75,33 @@ namespace Sylt51bot
 				commands.RegisterCommands<GenCommands>();
                 discord.MessageCreated += async (client, e) =>
                 {
-					if(!e.Message.Author.IsBot && e.Message.Content.Contains("€"))
+					if(e.Message.Content.Contains("€"))
 					{
-						// get the number of euros from text
-						string[] split = e.Message.Content.Split('€');
-						string euroamt = split[0].Substring(split[0].LastIndexOf(" ") + 1);
-						if(euroamt.Contains(","))
-						{
-							euroamt = euroamt.Replace(",", ".");
-						}
+						double i = 0;
 						long Schulden = 86300000000;
-						if(double.TryParse(euroamt, out double amt) && amt <= 1000 && amt > 0 && !double.IsNaN(amt))
+						while(!e.Message.Author.IsBot && e.Message.Content.Contains("€"))
 						{
-							cInf.SchuldenDerDDR -= amt * 1.95583;
-							await e.Message.RespondAsync($"Das sind {Math.Round(amt * 1.95583, 1)} Mark. {Math.Round(amt * 1.95583 * 2, 1)} Ostmark. {Math.Round(amt * 1.95583 * 2 * 10, 1)} Ostmark aufm Schwarzmarkt.\nVon den bisherigen Zwietracht-Pfostierungen hätte man {(1 - (double)cInf.SchuldenDerDDR/(double)Schulden).ToString("##0.#####%") } der DDR entschulden können.");
+							string[] split = e.Message.Content.Split('€');
+							string euroamt = split[0].Substring(split[0].LastIndexOf(" ") + 1);
+							if(euroamt.Contains(","))
+							{
+								euroamt = euroamt.Replace(",", ".");
+							}
+							if(double.TryParse(euroamt, out double amt) && amt <= 1000 && amt > 0 && !double.IsNaN(amt))
+							{
+								i += amt;
+							}
+							else
+							{
+								return;
+							}
+						}
+						if(i != 0)
+						{
+							cInf.SchuldenDerDDR -= i * 1.95583;
+							await e.Message.RespondAsync($"Das sind {Math.Round(i * 1.95583, 1)} Mark. {Math.Round(i * 1.95583 * 2, 1)} Ostmark. {Math.Round(i * 1.95583 * 2 * 10, 1)} Ostmark aufm Schwarzmarkt.\nVon den bisherigen Zwietracht-Pfostierungen hätte man {(1 - (double)cInf.SchuldenDerDDR/(double)Schulden).ToString("##0.00000%") } der DDR entschulden können.");
 							File.WriteAllText("config/mconfig.json", Newtonsoft.Json.JsonConvert.SerializeObject(cInf));
 						}
-						
 					}
                 };
 
@@ -105,7 +115,7 @@ namespace Sylt51bot
                 await Task.Delay(-1);
             }
             catch (Exception ex)
-            {           // Next: LevelSystem & helpmenu import from zeisu
+            {
                 try
 				{
 					Console.WriteLine("CONNECTION TERMINATED\nAttempting automatic restart...");
@@ -263,7 +273,7 @@ namespace CAttributes
 	}
 
 	[AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-	public class RequireAuthAttribute : CheckBaseAttribute   // Requires the user to be authenticated
+	public class RequireAuthAttribute : CheckBaseAttribute
 	{
 		public override Task<bool> ExecuteCheckAsync(CommandContext e, bool help)
 		{
