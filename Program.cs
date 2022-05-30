@@ -79,26 +79,21 @@ namespace Sylt51bot
 					{
 						double i = 0;
 						long Schulden = 86300000000;
-						string s = e.Message.Content;
-						while(!e.Message.Author.IsBot && s.Contains("€"))
+						string[] split = e.Message.Content.Split('€');
+						foreach(string sS in split)
 						{
-							string[] split = s.Split('€');
-							string euroamt = split[0].Substring(split[0].LastIndexOf(" ") + 1);
+							string euroamt = sS.Substring(sS.LastIndexOf(" ") + 1);
+
 							if(euroamt.Contains(","))
 							{
 								euroamt = euroamt.Replace(",", ".");
 							}
-							s.Replace("€", "");
-							if(double.TryParse(euroamt, out double amt) && amt <= 1000 && amt > 0 && !double.IsNaN(amt))
+							if(double.TryParse(euroamt, out double amt) && amt > 0 && !double.IsNaN(amt))
 							{
 								i += amt;
 							}
-							else
-							{
-								return;
-							}
 						}
-						if(i != 0)
+						if(i > 0 && i <= 1000)
 						{
 							cInf.SchuldenDerDDR -= i * 1.95583;
 							await e.Message.RespondAsync($"Das sind {Math.Round(i * 1.95583, 1)} Mark. {Math.Round(i * 1.95583 * 2, 1)} Ostmark. {Math.Round(i * 1.95583 * 2 * 10, 1)} Ostmark aufm Schwarzmarkt.\nVon den bisherigen Zwietracht-Pfostierungen hätte man {(1 - (double)cInf.SchuldenDerDDR/(double)Schulden).ToString("##0.00000%") } der DDR entschulden können.");
