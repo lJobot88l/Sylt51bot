@@ -79,14 +79,16 @@ namespace Sylt51bot
 					{
 						double i = 0;
 						long Schulden = 86300000000;
-						while(!e.Message.Author.IsBot && e.Message.Content.Contains("€"))
+						string s = e.Message.Content;
+						while(!e.Message.Author.IsBot && s.Contains("€"))
 						{
-							string[] split = e.Message.Content.Split('€');
+							string[] split = s.Split('€');
 							string euroamt = split[0].Substring(split[0].LastIndexOf(" ") + 1);
 							if(euroamt.Contains(","))
 							{
 								euroamt = euroamt.Replace(",", ".");
 							}
+							s.Replace("€", "");
 							if(double.TryParse(euroamt, out double amt) && amt <= 1000 && amt > 0 && !double.IsNaN(amt))
 							{
 								i += amt;
