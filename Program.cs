@@ -16,7 +16,7 @@ namespace Sylt51bot
     {
 		public static CommandsNextExtension commands;
 		public static DiscordClient discord;
-		public static DiscordActivity g1;
+		public static DiscordActivity g1 = new DiscordActivity();
 		public static ulong LastHb = 0; // Last heartbeat message
 		public static SetupInfo cInf; // The setup info
         
