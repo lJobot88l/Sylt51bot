@@ -19,9 +19,19 @@ namespace Sylt51bot
 			{
 				DiscordMessage resmsg = await e.RespondAsync(new DiscordEmbedBuilder
 				{
-					Description = $"Pong!\n`{discord.Ping}`ms",
+					Description = $"**Pinging**\nWS: `{discord.Ping}`ms",
 					Color = DiscordColor.Green
 				});
+				resmsg = await resmsg.ModifyAsync((new DiscordMessageBuilder()).WithEmbed(new DiscordEmbedBuilder
+				{
+					Description = $"**Pinging...**\nWS: `{discord.Ping}`ms",
+					Color = DiscordColor.Green
+				}));
+				await resmsg.ModifyAsync((new DiscordMessageBuilder()).WithEmbed(new DiscordEmbedBuilder
+				{
+					Description = $"**Pong!**\nPing: `{(((TimeSpan)(resmsg.EditedTimestamp - resmsg.Timestamp)).TotalMilliseconds).ToString("#")}`ms\nWS: `{discord.Ping}`ms",
+					Color = DiscordColor.Green
+				}));
 			}
 			catch (Exception ex)
 			{
