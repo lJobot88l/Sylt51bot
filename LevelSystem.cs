@@ -202,13 +202,21 @@ namespace Sylt51bot
 							{
 								role = "Keine Rolle";
 							}
-							if (kvp.Key != e.Message.Author.Id)
+							try
 							{
-								embedstring += $"**```#{i + 1} | {(await e.Guild.GetMemberAsync(kvp.Key)).Username}``` {kvp.Value}xp | [{role}]**\n\n";
+								DiscordUser user = await discord.GetUserAsync(kvp.Key);
+								if (kvp.Key != e.Message.Author.Id)
+								{
+									embedstring += $"**```#{i + 1} | {user.Username}``` {kvp.Value}xp | [{role}]**\n\n";
+								}
+								else
+								{
+									embedstring += $"**```< #{i + 1} | {user.Username} >```{kvp.Value}xp | [{role}]**\n\n";
+								}
 							}
-							else
+							catch
 							{
-								embedstring += $"**```< #{i + 1} | {(await e.Guild.GetMemberAsync(kvp.Key)).Username} >```{kvp.Value}xp | [{role}]**\n\n";
+								embedstring += $"**```#{i + 1} | Unbekannter benutzer - ID:{kvp.Key}``` {kvp.Value}xp | [{role}]**\n\n";
 							}
 							i++;
 							if (i == ((page - 1) * 5) + 5)
