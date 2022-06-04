@@ -16,7 +16,7 @@ namespace Sylt51bot
     {
 		public static CommandsNextExtension commands;
 		public static DiscordClient discord;
-		public static DiscordActivity g1 = new DiscordActivity();
+		public static DiscordActivity g1 = new DiscordActivity("");
 		public static ulong LastHb = 0; // Last heartbeat message
 		public static SetupInfo cInf; // The setup info
         
@@ -292,6 +292,7 @@ namespace Classes
 		public string GitHub { get; set; } = null;
         public List<ulong> AuthUsers { get; set; } = null;
 		public double SchuldenDerDDR { get; set; } = 86300000000;
+		public string Version = "1.0.3";
 	}
 
 	public class RegisteredServer

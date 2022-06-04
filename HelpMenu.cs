@@ -132,6 +132,7 @@ namespace Sylt51bot
 				_embed.AddField("Level Befehle", xpcommands, true);
 			}
 			_embed.AddField("Nützliche Links", $"[Discord]({cInf.DiscordInvite}) | [GitHub]({cInf.GitHub}) | [Bot Einladung](https://discord.com/oauth2/authorize?client_id={discord.CurrentUser.Id}&scope=bot&permissions=805317632)", false);
+			_embed.WithFooter($"Version {cInf.Version}");
 			return this;
 		}
 		public override CommandHelpMessage Build()
