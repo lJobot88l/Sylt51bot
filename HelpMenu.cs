@@ -112,9 +112,8 @@ namespace Sylt51bot
 							break;
 					}
 				}
-				catch
+				catch (Exception ex)
 				{
-
 				}
 				// _strBuilder.AppendLine($"{cmd.Name} - {cmd.Description}");
 			}
