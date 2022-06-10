@@ -152,7 +152,7 @@ namespace Sylt51bot
             try
 			{
 				var failedChecks = ((DSharpPlus.CommandsNext.Exceptions.ChecksFailedException)e.Exception).FailedChecks;
-				DiscordEmbedBuilder embed = new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = "Command couldn't execute D:\nHere's why:" };
+				DiscordEmbedBuilder embed = new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = "Der Befehl konnte nicht ausgeführt werden :c" };
 				bool canSend = false;
 				if(e.Context.Channel.PermissionsFor(await e.Context.Guild.GetMemberAsync(discord.CurrentUser.Id)).HasPermission(Permissions.SendMessages))
 				{
@@ -163,7 +163,7 @@ namespace Sylt51bot
 					if (failedCheck is CAttributes.RequireBotPermissions2Attribute)
 					{
 						var botperm = (CAttributes.RequireBotPermissions2Attribute)failedCheck;
-						embed.AddField("My Required Permissions", $"```{botperm.Permissions.ToPermissionString()}```");
+						embed.AddField("Deine nötigen Berechtigungen", $"```{botperm.Permissions.ToPermissionString()}```");
 						if (botperm.Permissions.HasFlag(Permissions.SendMessages))
 						{
 							canSend = false;
@@ -172,14 +172,19 @@ namespace Sylt51bot
 					if (failedCheck is CAttributes.RequireUserPermissions2Attribute)
 					{
 						var botperm = (CAttributes.RequireUserPermissions2Attribute)failedCheck;
-						embed.AddField("Your Required Permissions", $"```{botperm.Permissions.ToPermissionString()}```");
+						embed.AddField("Meine nötigen Berechtigungen", $"```{botperm.Permissions.ToPermissionString()}```");
 					}
 					if (failedCheck is RequireGuildAttribute)
 					{
 						RequireGuildAttribute guild = (RequireGuildAttribute)failedCheck;
 						embed.AddField("Server only", "This command can not be used in DMs.");
 					}
-					embed.AddField("Error:", $"```e.Exception.ToString()```");
+					if(failedCheck is CAttributes.ModuleAttribute)
+					{
+						CAttributes.ModuleAttribute mod = (CAttributes.ModuleAttribute)failedCheck;
+						embed.AddField("Das folgende Modul muss aktiviert sein:", $"```{mod.module}```");
+					}
+					embed.AddField("Error:", $"```{e.Exception.ToString()}```");
 				}
 				if (canSend == true)
 				{
@@ -198,7 +203,7 @@ namespace Sylt51bot
         }
 		public static async Task AlertException(CommandContext e, Exception ex)
 		{
-			await e.Message.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = "An error occured" });
+			await e.Message.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = "Ein Fehler ist aufgetreten" });
 			Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(ex));
 			await discord.SendMessageAsync(await discord.GetChannelAsync(cInf.ErrorHbChannel), Newtonsoft.Json.JsonConvert.SerializeObject(ex));
 		}
@@ -212,7 +217,7 @@ namespace Sylt51bot
 
 		public static async Task AlertException(MessageReactionAddEventArgs e, Exception ex)
 		{
-			await e.Message.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = "An error occured" });
+			await e.Message.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = "Ein Fehler ist aufgetreten" });
 			Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(ex));
 			await discord.SendMessageAsync(await discord.GetChannelAsync(cInf.ErrorHbChannel), Newtonsoft.Json.JsonConvert.SerializeObject(ex));
 		}
@@ -435,7 +440,7 @@ namespace Classes
 		public string GitHub { get; set; } = null;
         public List<ulong> AuthUsers { get; set; } = null;
 		public double SchuldenDerDDR { get; set; } = 86300000000;
-		public string Version = "1.1.0a";
+		public string Version = "1.1.1a";
 	}
 
 	public class RegisteredServer
