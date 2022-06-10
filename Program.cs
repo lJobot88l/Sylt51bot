@@ -30,9 +30,9 @@ namespace Sylt51bot
                 if (File.Exists("config/mconfig.json"))
                 {
                     cInf = Newtonsoft.Json.JsonConvert.DeserializeObject<SetupInfo>(File.ReadAllText("config/mconfig.json"));
-                    if(File.Exists("config/xpcfg.json"))
+                    if(File.Exists("config/RegServers.json"))
                     {
-                        servers = Newtonsoft.Json.JsonConvert.DeserializeObject<List<RegisteredServer>>(File.ReadAllText("config/xpcfg.json"));
+                        servers = Newtonsoft.Json.JsonConvert.DeserializeObject<List<RegisteredServer>>(File.ReadAllText("config/RegServers.json"));
                     }
                 }
                 else
@@ -75,29 +75,37 @@ namespace Sylt51bot
 				commands.RegisterCommands<GenCommands>();
                 discord.MessageCreated += async (client, e) =>
                 {
-					if(e.Message.Content.Contains("€"))
+					if(!servers.Exists(x => x.Id == e.Guild.Id))
 					{
-						double i = 0;
-						long Schulden = 86300000000;
-						string[] split = e.Message.Content.Split('€');
-						foreach(string sS in split)
+						servers.Add(new RegisteredServer { Id = e.Guild.Id} );
+						File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+					}
+					if(servers.Find(x => x.Id == e.Guild.Id).EnabledModules.HasFlag(Modules.Rechenknecht))
+					{
+						if(e.Message.Content.Contains("€"))
 						{
-							string euroamt = sS.Substring(sS.LastIndexOf(" ") + 1);
+							double i = 0;
+							long Schulden = 86300000000;
+							string[] split = e.Message.Content.Split('€');
+							foreach(string sS in split)
+							{
+								string euroamt = sS.Substring(sS.LastIndexOf(" ") + 1);
 
-							if(euroamt.Contains(","))
-							{
-								euroamt = euroamt.Replace(",", ".");
+								if(euroamt.Contains(","))
+								{
+									euroamt = euroamt.Replace(",", ".");
+								}
+								if(double.TryParse(euroamt, out double amt) && amt > 0 && !double.IsNaN(amt))
+								{
+									i += amt;
+								}
 							}
-							if(double.TryParse(euroamt, out double amt) && amt > 0 && !double.IsNaN(amt))
+							if(i > 0 && i <= 1000)
 							{
-								i += amt;
+								cInf.SchuldenDerDDR -= i * 1.95583;
+								await e.Message.RespondAsync($"Das sind {Math.Round(i * 1.95583, 1)} Mark. {Math.Round(i * 1.95583 * 2, 1)} Ostmark. {Math.Round(i * 1.95583 * 2 * 10, 1)} Ostmark aufm Schwarzmarkt.\nVon den bisherigen Zwietracht-Pfostierungen hätte man {(1 - (double)cInf.SchuldenDerDDR/(double)Schulden).ToString("##0.00000%") } der DDR entschulden können.");
+								File.WriteAllText("config/mconfig.json", Newtonsoft.Json.JsonConvert.SerializeObject(cInf));
 							}
-						}
-						if(i > 0 && i <= 1000)
-						{
-							cInf.SchuldenDerDDR -= i * 1.95583;
-							await e.Message.RespondAsync($"Das sind {Math.Round(i * 1.95583, 1)} Mark. {Math.Round(i * 1.95583 * 2, 1)} Ostmark. {Math.Round(i * 1.95583 * 2 * 10, 1)} Ostmark aufm Schwarzmarkt.\nVon den bisherigen Zwietracht-Pfostierungen hätte man {(1 - (double)cInf.SchuldenDerDDR/(double)Schulden).ToString("##0.00000%") } der DDR entschulden können.");
-							File.WriteAllText("config/mconfig.json", Newtonsoft.Json.JsonConvert.SerializeObject(cInf));
 						}
 					}
                 };
@@ -106,6 +114,20 @@ namespace Sylt51bot
                 {
                     await discord.ReconnectAsync();
                 };
+
+				discord.GuildCreated += async (client, e) =>
+				{
+					if(!servers.Exists(x => x.Id == e.Guild.Id))
+					{
+						RegisteredServer newJoinedServer = new RegisteredServer
+						{
+							Id = e.Guild.Id
+						};
+						servers.Add(newJoinedServer);
+						File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+					}
+				};
+
 
                 await discord.ConnectAsync();
                 await SendHeartbeatAsync().ConfigureAwait(false);
@@ -131,21 +153,25 @@ namespace Sylt51bot
 			{
 				var failedChecks = ((DSharpPlus.CommandsNext.Exceptions.ChecksFailedException)e.Exception).FailedChecks;
 				DiscordEmbedBuilder embed = new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = "Command couldn't execute D:\nHere's why:" };
-				bool canSend = true;
+				bool canSend = false;
+				if(e.Context.Channel.PermissionsFor(await e.Context.Guild.GetMemberAsync(discord.CurrentUser.Id)).HasPermission(Permissions.SendMessages))
+				{
+					canSend = true;
+				}
 				foreach (var failedCheck in failedChecks)
 				{
-					if (failedCheck is RequireBotPermissionsAttribute)
+					if (failedCheck is CAttributes.RequireBotPermissions2Attribute)
 					{
-						var botperm = (RequireBotPermissionsAttribute)failedCheck;
+						var botperm = (CAttributes.RequireBotPermissions2Attribute)failedCheck;
 						embed.AddField("My Required Permissions", $"```{botperm.Permissions.ToPermissionString()}```");
 						if (botperm.Permissions.HasFlag(Permissions.SendMessages))
 						{
 							canSend = false;
 						}
 					}
-					if (failedCheck is RequireUserPermissionsAttribute)
+					if (failedCheck is CAttributes.RequireUserPermissions2Attribute)
 					{
-						var botperm = (RequireUserPermissionsAttribute)failedCheck;
+						var botperm = (CAttributes.RequireUserPermissions2Attribute)failedCheck;
 						embed.AddField("Your Required Permissions", $"```{botperm.Permissions.ToPermissionString()}```");
 					}
 					if (failedCheck is RequireGuildAttribute)
@@ -153,6 +179,7 @@ namespace Sylt51bot
 						RequireGuildAttribute guild = (RequireGuildAttribute)failedCheck;
 						embed.AddField("Server only", "This command can not be used in DMs.");
 					}
+					embed.AddField("Error:", $"```e.Exception.ToString()```");
 				}
 				if (canSend == true)
 				{
@@ -236,15 +263,19 @@ namespace Sylt51bot
 					LastHb = msghb.Id;
 					foreach (RegisteredServer e in servers)
 					{
-						foreach (KeyValuePair<ulong, DateTime> kvp in e.timedoutedusers)
+						try
 						{
-							if (DateTime.Now - kvp.Value >= e.CoolDown)
+							foreach (KeyValuePair<ulong, DateTime> kvp in e.timedoutedusers)
 							{
-                                servers[servers.FindIndex(x => x.Id == e.Id)].timedoutedusers.Remove(kvp.Key);
+								if (DateTime.Now - kvp.Value >= e.CoolDown)
+								{
+									servers[servers.FindIndex(x => x.Id == e.Id)].timedoutedusers.Remove(kvp.Key);
+								}
 							}
 						}
+						catch { }
 					}
-                    File.WriteAllText("config/xpcfg.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+                    File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
 				}
 				catch (Exception ex)
 				{
@@ -266,6 +297,20 @@ namespace CAttributes
 		public CommandClassAttribute(string e)
 		{
 			classname = e;
+		}
+	}
+	
+	[AttributeUsage(AttributeTargets.All, AllowMultiple = false)]
+	public class ModuleAttribute : CheckBaseAttribute
+	{
+		public Modules module { get; set; }
+		public ModuleAttribute(Modules e)
+		{
+			module = e;
+		}
+		public override Task<bool> ExecuteCheckAsync(CommandContext e, bool help)
+		{
+			return Task.FromResult(Sylt51bot.Program.servers.Find(x => x.Id == e.Guild.Id).EnabledModules.HasFlag(module));
 		}
 	}
 
@@ -390,7 +435,7 @@ namespace Classes
 		public string GitHub { get; set; } = null;
         public List<ulong> AuthUsers { get; set; } = null;
 		public double SchuldenDerDDR { get; set; } = 86300000000;
-		public string Version = "1.0.3";
+		public string Version = "1.1.0a";
 	}
 
 	public class RegisteredServer
@@ -403,11 +448,21 @@ namespace Classes
 		public int MinXp { get; set; } = 10;
 		public int MaxXp { get; set; } = 20;
 		public TimeSpan CoolDown { get; set; } = TimeSpan.FromMinutes(2);
+		public Modules EnabledModules { get; set; } = Modules.Rechenknecht;
 	}
+
 	public class LevelRole
 	{
 		public string Name { get; set; }
 		public ulong RoleId { get; set; }
 		public int XpReq { get; set; }
+	}
+
+	[Flags]
+	public enum Modules
+	{
+		Levelling = 0b01,
+		Rechenknecht = 0b10,
+		All = 0b11
 	}
 }

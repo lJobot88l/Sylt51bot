@@ -86,9 +86,10 @@ namespace Sylt51bot
 			_embed.Title = "Hilfe";
 			_embed.Description = "Mehr Informationen über einen Befehl mit `=help <befehlname>`";
 			_embed.Color = DiscordColor.Green;
-			string owneronlycommands = "";
-			string othercommands = "";
-			string xpcommands = "";
+			string owneronlycommands = "|";
+			string othercommands = "|";
+			string xpcommands = "|";
+			string modcommands = "|";
 			List<string> e = new List<string>();
 			foreach (var cmd in cmds)
 			{
@@ -99,13 +100,16 @@ namespace Sylt51bot
 					switch (t.classname)
 					{
 						case "OwnerCommands":
-							owneronlycommands += $" `{cmd.Name}`";
+							owneronlycommands += $" `{cmd.Name}` |";
 							break;
 						case "OtherCommands":
-							othercommands += $" `{cmd.Name}`";
+							othercommands += $" `{cmd.Name}` |";
 							break;
 						case "LevelCommands":
-							xpcommands += $" `{cmd.Name}`";
+							xpcommands += $" `{cmd.Name}` |";
+							break;
+						case "ModCommands":
+							modcommands += $" `{cmd.Name}` |";
 							break;
 						default:
 							Console.WriteLine("err");
@@ -117,16 +121,20 @@ namespace Sylt51bot
 				}
 				// _strBuilder.AppendLine($"{cmd.Name} - {cmd.Description}");
 			}
-			if(owneronlycommands != "")
+			if(owneronlycommands != "|")
 			{
 				_embed.AddField("Besitzerbefehle", owneronlycommands, true);
 			}
-			if (othercommands != "")
+			if(modcommands != "|")
+			{
+				_embed.AddField("Moderatorbefehle", modcommands, true);
+			}
+			if (othercommands != "|")
 			{
 				_embed.AddField("Sonstige Befehle", othercommands, true);
 			}
 			//_embed.AddField("Self Role Commands", selfrolecommands);
-			if (xpcommands != "")
+			if (xpcommands != "|")
 			{
 				_embed.AddField("Level Befehle", xpcommands, true);
 			}

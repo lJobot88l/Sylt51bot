@@ -21,7 +21,7 @@ namespace Sylt51bot
 		{
 			try
 			{
-				if (e.Channel.IsPrivate == false && servers.FindIndex(x => x.Id == e.Guild.Id) != -1)
+				if (e.Channel.IsPrivate == false && servers.FindIndex(x => x.Id == e.Guild.Id) != -1 && servers.Find(x => x.Id == e.Guild.Id).EnabledModules.HasFlag(Modules.Levelling))
 				{
 					RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
 					if (e.Message.Author.IsBot == false && (!s.channelxpexclude.Contains(e.Guild.Id)))
@@ -85,7 +85,7 @@ namespace Sylt51bot
 								await discord.SendMessageAsync(e.Channel, new DiscordEmbedBuilder { Description = $"**{e.Author.Mention}**'s level changed to level **{userslevel}**!", Color = DiscordColor.Green });
 							}
 							servers[servers.FindIndex(x => x.Id == e.Guild.Id)].xplist[e.Message.Author.Id] = s.xplist[e.Message.Author.Id];
-							File.WriteAllText("config/xpcfg.json", JsonConvert.SerializeObject(servers));
+							File.WriteAllText("config/RegServers.json", JsonConvert.SerializeObject(servers));
 						}
 						catch (DSharpPlus.Exceptions.UnauthorizedException)
 						{
@@ -117,7 +117,7 @@ namespace Sylt51bot
 					s.xplist.Add(e.Message.Author.Id, amount);
 				}
 				servers[servers.IndexOf(s)] = s;
-				File.WriteAllText("config/xpcfg.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+				File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
 			}
 			else
 			{
@@ -128,7 +128,7 @@ namespace Sylt51bot
 
 	public class LevelCommands : BaseCommandModule
 	{
-		[Command("lvlroles"), CommandClass("LevelCommands"), RequireGuild(), Description("Displays the level roles with their required score\n\nUsage:\n```=lvlroles```"), RequireBotPermissions2(Permissions.SendMessages)]
+		[Command("lvlroles"), CommandClass("LevelCommands"), RequireGuild(), Description("Displays the level roles with their required score\n\nUsage:\n```=lvlroles```"), RequireBotPermissions2(Permissions.SendMessages), Module(Modules.Levelling)]
 		public async Task LvlRoles(CommandContext e)
 		{
 			try
@@ -168,7 +168,7 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("top"), CommandClass("LevelCommands"), RequireGuild(), Description("Displays the servers level leaderboard\n\nUsage:\n```=top [page, defaults to 1]```"), Aliases("lb")]
+		[Command("top"), CommandClass("LevelCommands"), RequireGuild(), Description("Displays the servers level leaderboard\n\nUsage:\n```=top [page, defaults to 1]```"), Aliases("lb"), Module(Modules.Levelling)]
 		public async Task Leaderboard(CommandContext e, int page = 1)
 		{
 			try
@@ -244,7 +244,7 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("rank"), CommandClass("LevelCommands"), RequireGuild(), Description("Displays yours or another users level\n\nUsage:\n```=rank [ ID / @mention ]```"), Aliases("lvl", "level"), RequireBotPermissions2(Permissions.SendMessages)]
+		[Command("rank"), CommandClass("LevelCommands"), RequireGuild(), Description("Displays yours or another users level\n\nUsage:\n```=rank [ ID / @mention ]```"), Aliases("lvl", "level"), RequireBotPermissions2(Permissions.SendMessages), Module(Modules.Levelling)]
 		public async Task Rank(CommandContext e, DiscordUser user = null)
 		{
 			try
@@ -329,7 +329,7 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("lvledit"), CommandClass("LevelCommands"), RequireGuild(), Description("Edits a level role in the server.\nIf no score is given, the role will be removed as a level role. Else the required score will be updated\n\nUsage:\n```=lvladd < ID / @mention > [score]```"), RequireUserPermissions2(Permissions.ManageGuild), RequireBotPermissions2(Permissions.ManageRoles & Permissions.SendMessages)]
+		[Command("lvledit"), CommandClass("LevelCommands"), RequireGuild(), Description("Edits a level role in the server.\nIf no score is given, the role will be removed as a level role. Else the required score will be updated\n\nUsage:\n```=lvladd < ID / @mention > [score]```"), RequireUserPermissions2(Permissions.ManageGuild), RequireBotPermissions2(Permissions.ManageRoles & Permissions.SendMessages), Module(Modules.Levelling)]
 		public async Task LvlAdd(CommandContext e, DiscordRole role, int score = 0)
 		{
 			try
@@ -392,7 +392,7 @@ namespace Sylt51bot
 					{
 						await e.Message.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Rolle **{role.Name}** wurde zu **{e.Guild.Name}**'s Levelrollen hinzugefügt!" });
 					}
-					File.WriteAllText("config/xpcfg.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+					File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
 				}
 				else
 				{
@@ -405,7 +405,7 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("xpedit"), CommandClass("LevelCommands"), RequireGuild(), Description("Edits a users xp.\nIf no xp amount is given, it will be reset to 0, else it will be updated to the given amount\n\nUsage:\n```=addxp < ID / @mention > [xp]```"), RequireUserPermissions2(Permissions.ManageGuild), RequireBotPermissions2(Permissions.SendMessages)]
+		[Command("xpedit"), CommandClass("LevelCommands"), RequireGuild(), Description("Edits a users xp.\nIf no xp amount is given, it will be reset to 0, else it will be updated to the given amount\n\nUsage:\n```=addxp < ID / @mention > [xp]```"), RequireUserPermissions2(Permissions.ManageGuild), RequireBotPermissions2(Permissions.SendMessages), Module(Modules.Levelling)]
 		public async Task AddXpUser(CommandContext e, DiscordUser user, int xp = 0)
 		{
 			try
@@ -441,7 +441,7 @@ namespace Sylt51bot
 						{
 							await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = $"Nutzer nicht gefunden!" });
 						}
-						File.WriteAllText("config/xpcfg.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+						File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
 					}
 					else
 					{
@@ -459,7 +459,7 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("channeledit"), CommandClass("LevelCommands"), Description("Enables/Disables the xp gaining in the given channel\n\nUsage:\n```=channeledit < ID / #mention >```"), RequireGuild(), RequireUserPermissions2(Permissions.ManageGuild), RequireBotPermissions2(Permissions.SendMessages)]
+		[Command("channeledit"), CommandClass("LevelCommands"), Description("Enables/Disables the xp gaining in the given channel\n\nUsage:\n```=channeledit < ID / #mention >```"), RequireGuild(), RequireUserPermissions2(Permissions.ManageGuild), RequireBotPermissions2(Permissions.SendMessages), Module(Modules.Levelling)]
 		public async Task ChannelEdit(CommandContext e, DiscordChannel channel)
 		{
 			try
@@ -484,7 +484,7 @@ namespace Sylt51bot
 							await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Kanal {channel.Mention} ist nun vom xp verdienen ausgenommen!" });
 						}
 						servers[servers.FindIndex(x => x.Id == e.Guild.Id)] = s;
-						File.WriteAllText("config/xpcfg.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+						File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
 					}
 					else
 					{
@@ -515,7 +515,7 @@ namespace Sylt51bot
 				{
 					servers[servers.FindIndex(x => x.Id == serverid)].xplist = new Dictionary<ulong, int>();
 				}
-				File.WriteAllText("config/xpcfg.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+				File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
 				await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Reset xp for server {serverid}!" });
 			}
 			catch (Exception ex)
