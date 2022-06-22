@@ -82,7 +82,7 @@ namespace Sylt51bot
 							}
 							if (isDone == true)
 							{
-								await discord.SendMessageAsync(e.Channel, new DiscordEmbedBuilder { Description = $"**{e.Author.Mention}**'s level changed to level **{userslevel}**!", Color = DiscordColor.Green });
+								await discord.SendMessageAsync(e.Channel, new DiscordEmbedBuilder { Description = $"**{e.Author.Mention}**'s wurde aufgelevelt zu **{userslevel}**!", Color = DiscordColor.Green });
 							}
 							servers[servers.FindIndex(x => x.Id == e.Guild.Id)].xplist[e.Message.Author.Id] = s.xplist[e.Message.Author.Id];
 							File.WriteAllText("config/RegServers.json", JsonConvert.SerializeObject(servers));
