@@ -242,7 +242,7 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("rank"), CommandClass("LevelCommands"), RequireGuild(), Description("Displays yours or another users level\n\nUsage:\n```=rank [ ID / @mention ]```"), Aliases("lvl", "level"), RequireBotPermissions2(Permissions.SendMessages)]
+		[Command("rank"), CommandClass("LevelCommands"), RequireGuild(), Description("Zeigt den Level von dir oder einem anderen Benutzers an\n\nUsage:\n```=rank [ ID / @mention ]```"), Aliases("lvl", "level"), RequireBotPermissions2(Permissions.SendMessages)]
 		public async Task Rank(CommandContext e, DiscordUser user = null)
 		{
 			try
