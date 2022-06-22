@@ -325,7 +325,7 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("lvledit"), CommandClass("LevelCommands"), RequireGuild(), Description("Editiert die erforderliche XP, für eine Rolle in einem Server.\nWenn kein XP argument angegeben wurde wird die Rolle entfernt. Ansonsten wird die Anzahl der benötigten XP aktualisiert\n\nBenutzung:\n```=lvladd < ID / @mention > [score]```"), RequireUserPermissions2(Permissions.ManageGuild), RequireBotPermissions2(Permissions.ManageRoles & Permissions.SendMessages)]
+		[Command("lvledit"), CommandClass("LevelCommands"), RequireGuild(), Description("Editiert die erforderliche XP, für eine Rolle in einem Server.\nWenn kein XP Argument angegeben wurde wird die Rolle entfernt. Ansonsten wird die Anzahl der benötigten XP aktualisiert\n\nBenutzung:\n```=lvladd < ID / @mention > [score]```"), RequireUserPermissions2(Permissions.ManageGuild), RequireBotPermissions2(Permissions.ManageRoles & Permissions.SendMessages)]
 		public async Task LvlAdd(CommandContext e, DiscordRole role, int score = 0)
 		{
 			try
@@ -393,7 +393,7 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("xpedit"), CommandClass("LevelCommands"), RequireGuild(), Description("Edits a users xp.\nIf no xp amount is given, it will be reset to 0, else it will be updated to the given amount\n\nUsage:\n```=addxp < ID / @mention > [xp]```"), RequireUserPermissions2(Permissions.ManageGuild), RequireBotPermissions2(Permissions.SendMessages)]
+		[Command("xpedit"), CommandClass("LevelCommands"), RequireGuild(), Description("Ändert die Anzahl an XP, die ein Benutzer hat.\nWenn kein XP Argument angegeben wird die XP zu 0 zurückgesetzt. Ansonsten wird es zur eingegebenen Eingabe aktualisiert\n\nBenutzung:\n```=addxp < ID / @mention > [xp]```"), RequireUserPermissions2(Permissions.ManageGuild), RequireBotPermissions2(Permissions.SendMessages)]
 		public async Task AddXpUser(CommandContext e, DiscordUser user, int xp = 0)
 		{
 			try
