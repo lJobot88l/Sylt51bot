@@ -13,7 +13,7 @@ namespace Sylt51bot
 {
 	public class BotAdminCommands : BaseCommandModule
 	{
-		[Command("addauth"), CommandClass("OwnerCommands"), Description("Fügt/Entfernt einen benutzer aus der Liste der Adminbots\n\nBenutzung:\n```=addauth <ID / @mention >```"), RequireAuth()]
+		[Command("addauth"), CommandClass("OwnerCommands"), Description("Fügt/Entfernt einen Benutzer aus der Liste der Adminbots\n\nBenutzung:\n```=addauth <ID / @mention >```"), RequireAuth()]
 		public async Task AddAuth(CommandContext e, DiscordUser NewAdmin)
 		{
 			try
