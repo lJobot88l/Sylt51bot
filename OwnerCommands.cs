@@ -50,7 +50,7 @@ namespace Sylt51bot
 					await discord.UpdateStatusAsync();
 				}
 				DiscordMessageBuilder msgb = new DiscordMessageBuilder();
-				msgb.WithEmbed(new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Updated status to {NewStatus}" });
+				msgb.WithEmbed(new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Status zu {NewStatus} aktualisiert" });
 				msgb.WithReply(e.Message.Id);
 				await e.Message.RespondAsync(msgb);
 			}
