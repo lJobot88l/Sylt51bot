@@ -325,7 +325,7 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("lvledit"), CommandClass("LevelCommands"), RequireGuild(), Description("Edits a level role in the server.\nIf no score is given, the role will be removed as a level role. Else the required score will be updated\n\nUsage:\n```=lvladd < ID / @mention > [score]```"), RequireUserPermissions2(Permissions.ManageGuild), RequireBotPermissions2(Permissions.ManageRoles & Permissions.SendMessages)]
+		[Command("lvledit"), CommandClass("LevelCommands"), RequireGuild(), Description("Editiert die erforderliche XP, für eine Rolle in einem Server.\nWenn kein XP argument angegeben wurde wird die Rolle entfernt. Ansonsten wird die Anzahl der benötigten XP aktualisiert\n\nBenutzung:\n```=lvladd < ID / @mention > [score]```"), RequireUserPermissions2(Permissions.ManageGuild), RequireBotPermissions2(Permissions.ManageRoles & Permissions.SendMessages)]
 		public async Task LvlAdd(CommandContext e, DiscordRole role, int score = 0)
 		{
 			try
