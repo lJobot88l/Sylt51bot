@@ -500,7 +500,7 @@ namespace Sylt51bot
 					servers[servers.FindIndex(x => x.Id == serverid)].xplist = new Dictionary<ulong, int>();
 				}
 				File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
-				await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Reset xp for server {serverid}!" });
+				await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Setzt XP vom ganzem Server zurück{serverid}!" });
 			}
 			catch (Exception ex)
 			{
