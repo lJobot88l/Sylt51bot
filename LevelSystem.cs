@@ -316,7 +316,7 @@ namespace Sylt51bot
 				}
 				else
 				{
-					await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Description = $"**{user.Username}** hat noch kein XP gesammelt!", Color = DiscordColor.Green });
+					await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Description = $"**{user.Username}** hat noch keine XP gesammelt!", Color = DiscordColor.Green });
 				}
 			}
 			catch (Exception ex)
