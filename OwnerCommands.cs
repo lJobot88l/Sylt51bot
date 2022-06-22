@@ -35,7 +35,7 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("status"), CommandClass("OwnerCommands"), Description("Sets the bots status to a given text. \"clear\" to clear.\n\nUsage:\n```=status <New Status>```"), RequireAuth()]
+		[Command("status"), CommandClass("OwnerCommands"), Description("Setzt den Botstatus zum angegebenen Text. \"clear\" um den Text Blank zu machen.\n\nBenutzung:\n```=status <New Status>```"), RequireAuth()]
 		public async Task Status(CommandContext e, [RemainingText] string NewStatus)
 		{
 			try
