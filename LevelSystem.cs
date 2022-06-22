@@ -168,7 +168,7 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("top"), CommandClass("LevelCommands"), RequireGuild(), Description("Displays the servers level leaderboard\n\nUsage:\n```=top [page, defaults to 1]```"), Aliases("lb"), Module(Modules.Levelling)]
+		[Command("top"), CommandClass("LevelCommands"), RequireGuild(), Description("Zeigt die Bestenliste des Servers an\n\nUsage:\n```=top [page, defaults to 1]```"), Aliases("lb"), Module(Modules.Levelling)]
 		public async Task Leaderboard(CommandContext e, int page = 1)
 		{
 			try
