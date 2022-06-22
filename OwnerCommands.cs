@@ -13,7 +13,7 @@ namespace Sylt51bot
 {
 	public class BotAdminCommands : BaseCommandModule
 	{
-		[Command("addauth"), CommandClass("OwnerCommands"), Description("Adds/Removes a user to the list of bot admins\n\nUsage:\n```=addauth <ID / @mention >```"), RequireAuth()]
+		[Command("addauth"), CommandClass("OwnerCommands"), Description("Fügt/Entfernt einen Benutzer aus der Liste der Adminbots\n\nBenutzung:\n```=addauth <ID / @mention >```"), RequireAuth()]
 		public async Task AddAuth(CommandContext e, DiscordUser NewAdmin)
 		{
 			try
@@ -35,7 +35,7 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("status"), CommandClass("OwnerCommands"), Description("Sets the bots status to a given text. \"clear\" to clear.\n\nUsage:\n```=status <New Status>```"), RequireAuth()]
+		[Command("status"), CommandClass("OwnerCommands"), Description("Setzt den Botstatus zum angegebenen Text. \"clear\" um den Text Blank zu machen.\n\nBenutzung:\n```=status <New Status>```"), RequireAuth()]
 		public async Task Status(CommandContext e, [RemainingText] string NewStatus)
 		{
 			try
@@ -50,7 +50,7 @@ namespace Sylt51bot
 					await discord.UpdateStatusAsync();
 				}
 				DiscordMessageBuilder msgb = new DiscordMessageBuilder();
-				msgb.WithEmbed(new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Updated status to {NewStatus}" });
+				msgb.WithEmbed(new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Status zu {NewStatus} aktualisiert" });
 				msgb.WithReply(e.Message.Id);
 				await e.Message.RespondAsync(msgb);
 			}
