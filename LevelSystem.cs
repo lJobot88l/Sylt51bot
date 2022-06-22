@@ -89,7 +89,7 @@ namespace Sylt51bot
 						}
 						catch (DSharpPlus.Exceptions.UnauthorizedException)
 						{
-							await e.Channel.SendMessageAsync("Ich habe keine Berechtigungen um Rollen zu ändern!");
+							await e.Channel.SendMessageAsync("Ich habe keine Berechtigungen, um Rollen zu ändern!");
 						}
 					}
 				}
