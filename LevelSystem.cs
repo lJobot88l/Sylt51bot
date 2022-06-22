@@ -445,8 +445,8 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("channeledit"), CommandClass("LevelCommands"), Description("Enables/Disables the xp gaining in the given channel\n\nUsage:\n```=channeledit < ID / #mention >```"), RequireGuild(), RequireUserPermissions2(Permissions.ManageGuild), RequireBotPermissions2(Permissions.SendMessages)]
-		public async Task ChannelEdit(CommandContext e, DiscordChannel channel)
+		[Command("channeledit"), CommandClass("LevelCommands"), Description("Aktiviert/Deaktiviert das verdienen von XP im angegebenen Kanal\n\nBenutzung:\n```=channeledit < ID / #mention >```"), RequireGuild(), RequireUserPermissions2(Permissions.ManageGuild), RequireBotPermissions2(Permissions.SendMessages)]
+		public async Task ChannelEdit(CommandContext e, DiscordChannel channel) 
 		{
 			try
 			{
