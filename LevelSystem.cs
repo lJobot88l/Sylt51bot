@@ -128,7 +128,7 @@ namespace Sylt51bot
 
 	public class LevelCommands : BaseCommandModule
 	{
-		[Command("lvlroles"), CommandClass("LevelCommands"), RequireGuild(), Description("Displays the level roles with their required score\n\nUsage:\n```=lvlroles```"), RequireBotPermissions2(Permissions.SendMessages)]
+		[Command("lvlroles"), CommandClass("LevelCommands"), RequireGuild(), Description("Zeigt die Levelrollen an, zusammen mit den benötigten Punkten\n\nBenutzung:\n```=lvlroles```"), RequireBotPermissions2(Permissions.SendMessages)]
 		public async Task LvlRoles(CommandContext e)
 		{
 			try
