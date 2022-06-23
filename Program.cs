@@ -467,7 +467,7 @@ namespace Classes
 		public string GitHub { get; set; } = null;
         public List<ulong> AuthUsers { get; set; } = new List<ulong>();
 		public double SchuldenDerDDR { get; set; } = 86300000000;
-		public string Version = "1.1.1a";
+		public string Version = "1.1.1";
 	}
 
 	public class RegisteredServer
