@@ -7,8 +7,8 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using Newtonsoft.Json;
 using Classes;
-using System.Globalization;
 
 namespace Sylt51bot
 {
@@ -33,7 +33,24 @@ namespace Sylt51bot
                     if(File.Exists("config/RegServers.json"))
                     {
                         servers = Newtonsoft.Json.JsonConvert.DeserializeObject<List<RegisteredServer>>(File.ReadAllText("config/RegServers.json"));
-                    }
+						foreach(RegisteredServer s in servers)
+						{
+							if(s.channelxpexclude == null)
+							{
+								s.channelxpexclude = new List<ulong>();
+							}
+							if(s.lvlroles == null)
+							{
+								s.lvlroles = new List<LevelRole> { new LevelRole { RoleId = 0, XpReq = 0, Name = "Keine Rolle"} };
+							}
+							if(s.xplist == null)
+							{
+								s.xplist = new Dictionary<ulong, int>();
+							}
+						}
+						File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Formatting.Indented));
+
+					}
                 }
                 else
                 {
@@ -75,10 +92,10 @@ namespace Sylt51bot
 				commands.RegisterCommands<GenCommands>();
                 discord.MessageCreated += async (client, e) =>
                 {
-					if(!servers.Exists(x => x.Id == e.Guild.Id))
+					if(servers.FindIndex(x => x.Id == e.Guild.Id) == -1)
 					{
 						servers.Add(new RegisteredServer { Id = e.Guild.Id} );
-						File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+						File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Formatting.Indented));
 					}
 					if(servers.Find(x => x.Id == e.Guild.Id).EnabledModules.HasFlag(Modules.Rechenknecht))
 					{
@@ -103,28 +120,38 @@ namespace Sylt51bot
 							if(i > 0 && i <= 1000)
 							{
 								cInf.SchuldenDerDDR -= i * 1.95583;
-								await e.Message.RespondAsync($"Das sind {Math.Round(i * 1.95583, 1)} Mark. {Math.Round(i * 1.95583 * 2, 1)} Ostmark. {Math.Round(i * 1.95583 * 2 * 10, 1)} Ostmark aufm Schwarzmarkt.\nVon den bisherigen Zwietracht-Pfostierungen hätte man {(1 - (double)cInf.SchuldenDerDDR/(double)Schulden).ToString("##0.00000%") } der DDR entschulden können.");
-								File.WriteAllText("config/mconfig.json", Newtonsoft.Json.JsonConvert.SerializeObject(cInf));
+
+								System.Net.WebRequest request = System.Net.WebRequest.Create("https://v6.exchangerate-api.com/v6/034bafa8d38d097e76f4b918/pair/EUR/RUB");
+								request.ContentType = "application/json";
+								request.Method = "GET";
+								System.Net.HttpWebResponse response = (System.Net.HttpWebResponse)request.GetResponse();
+								Classes.ExRates exRates = Newtonsoft.Json.JsonConvert.DeserializeObject<Classes.ExRates>(new StreamReader(response.GetResponseStream()).ReadToEnd());
+								string RUB = "";
+								if(exRates.result == "success")
+								{
+									RUB = $"Das sind {Math.Round(i * exRates.conversion_rate, 2)} Rubel. ";
+									Console.WriteLine(exRates.conversion_rate);
+								}
+								Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(exRates, Newtonsoft.Json.Formatting.Indented));
+								Console.WriteLine(new StreamReader(response.GetResponseStream()).ReadToEnd());
+
+								await e.Message.RespondAsync($"Das sind {Math.Round(i * 1.95583, 2)} Mark. {Math.Round(i * 1.95583 * 2, 2)} Ostmark. {Math.Round(i * 1.95583 * 2 * 10, 2)} Ostmark aufm Schwarzmarkt. {RUB}\nVon den bisherigen Zwietracht-Pfostierungen hätte man {(1 - (double)cInf.SchuldenDerDDR/(double)Schulden).ToString("##0.00000%") } der DDR entschulden können.");
+								File.WriteAllText("config/mconfig.json", Newtonsoft.Json.JsonConvert.SerializeObject(cInf, Formatting.Indented));
 							}
 						}
 					}
                 };
 
-                discord.SocketClosed += async (client, e) =>
-                {
-                    await discord.ReconnectAsync();
-                };
-
 				discord.GuildCreated += async (client, e) =>
 				{
-					if(!servers.Exists(x => x.Id == e.Guild.Id))
+					if(servers.FindIndex(x => x.Id == e.Guild.Id) == -1)
 					{
 						RegisteredServer newJoinedServer = new RegisteredServer
 						{
 							Id = e.Guild.Id
 						};
 						servers.Add(newJoinedServer);
-						File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+						File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Formatting.Indented));
 					}
 				};
 
@@ -197,35 +224,35 @@ namespace Sylt51bot
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(ex));
+				Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(ex, Formatting.Indented));
 				Console.WriteLine(e.Exception.ToString());
 			}
         }
 		public static async Task AlertException(CommandContext e, Exception ex)
 		{
 			await e.Message.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = "Ein Fehler ist aufgetreten" });
-			Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(ex));
-			await discord.SendMessageAsync(await discord.GetChannelAsync(cInf.ErrorHbChannel), Newtonsoft.Json.JsonConvert.SerializeObject(ex));
+			Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(ex, Formatting.Indented));
+			await discord.SendMessageAsync(await discord.GetChannelAsync(cInf.ErrorHbChannel), Newtonsoft.Json.JsonConvert.SerializeObject(ex, Formatting.Indented));
 		}
 
 		public static async Task AlertException(MessageCreateEventArgs e, Exception ex)
 		{
 			await e.Message.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = "An error occured" });
-			Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(ex));
-			await discord.SendMessageAsync(await discord.GetChannelAsync(cInf.ErrorHbChannel), Newtonsoft.Json.JsonConvert.SerializeObject(ex));
+			Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(ex, Formatting.Indented));
+			await discord.SendMessageAsync(await discord.GetChannelAsync(cInf.ErrorHbChannel), Newtonsoft.Json.JsonConvert.SerializeObject(ex, Formatting.Indented));
 		}
 
 		public static async Task AlertException(MessageReactionAddEventArgs e, Exception ex)
 		{
 			await e.Message.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = "Ein Fehler ist aufgetreten" });
-			Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(ex));
-			await discord.SendMessageAsync(await discord.GetChannelAsync(cInf.ErrorHbChannel), Newtonsoft.Json.JsonConvert.SerializeObject(ex));
+			Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(ex, Formatting.Indented));
+			await discord.SendMessageAsync(await discord.GetChannelAsync(cInf.ErrorHbChannel), Newtonsoft.Json.JsonConvert.SerializeObject(ex, Formatting.Indented));
 		}
 
 		public static async Task AlertException(Exception ex)
 		{
-			Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(ex));
-			await discord.SendMessageAsync(await discord.GetChannelAsync(cInf.ErrorHbChannel), Newtonsoft.Json.JsonConvert.SerializeObject(ex));
+			Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(ex, Formatting.Indented));
+			await discord.SendMessageAsync(await discord.GetChannelAsync(cInf.ErrorHbChannel), Newtonsoft.Json.JsonConvert.SerializeObject(ex, Formatting.Indented));
 		}
 		public static async Task SendHeartbeatAsync()
 		{
@@ -274,13 +301,13 @@ namespace Sylt51bot
 							{
 								if (DateTime.Now - kvp.Value >= e.CoolDown)
 								{
-									servers[servers.FindIndex(x => x.Id == e.Id)].timedoutedusers.Remove(kvp.Key);
+									servers.Find(x => x.Id == e.Id).timedoutedusers.Remove(kvp.Key);
 								}
 							}
 						}
 						catch { }
 					}
-                    File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+                    File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Formatting.Indented));
 				}
 				catch (Exception ex)
 				{
@@ -438,7 +465,7 @@ namespace Classes
         // Links
 		public string DiscordInvite { get; set; } = null;
 		public string GitHub { get; set; } = null;
-        public List<ulong> AuthUsers { get; set; } = null;
+        public List<ulong> AuthUsers { get; set; } = new List<ulong>();
 		public double SchuldenDerDDR { get; set; } = 86300000000;
 		public string Version = "1.1.1a";
 	}
@@ -446,10 +473,10 @@ namespace Classes
 	public class RegisteredServer
 	{
 		public ulong Id { get; set; }
-        public Dictionary<ulong, int> xplist = null;
-        public Dictionary<ulong, DateTime> timedoutedusers = null;
-        public List<LevelRole> lvlroles = null;
-        public List<ulong> channelxpexclude = null;
+        public Dictionary<ulong, int> xplist { get; set; } = new Dictionary<ulong, int>();
+        public Dictionary<ulong, DateTime> timedoutedusers { get; set; } = new Dictionary<ulong, DateTime>();
+        public List<LevelRole> lvlroles { get; set; } = new List<LevelRole> { new LevelRole { RoleId = 0, XpReq = 0, Name = "Keine Rolle"} };
+        public List<ulong> channelxpexclude { get; set; } = new List<ulong>();
 		public int MinXp { get; set; } = 10;
 		public int MaxXp { get; set; } = 20;
 		public TimeSpan CoolDown { get; set; } = TimeSpan.FromMinutes(2);
@@ -469,5 +496,22 @@ namespace Classes
 		Levelling = 0b01,
 		Rechenknecht = 0b10,
 		All = 0b11
+	}
+
+	[System.Runtime.Serialization.DataContract]
+	public class ExRates
+	{
+		public string result { get; set; }
+		public string documentation { get; set; }
+		public string terms_of_use { get; set; }
+		public long time_last_update_unix { get; set; }
+		public string time_last_update_utc { get; set; }
+		public long time_next_update_unix { get; set; }
+		public string time_next_update_utc { get; set; }
+		public string base_code { get; set; }
+		public string target_code { get; set; }
+		public double conversion_rate { get; set; }
+		[System.Runtime.Serialization.DataMember(Name = "error-type")]
+		public string error_type { get; set; }
 	}
 }

@@ -21,77 +21,78 @@ namespace Sylt51bot
 		{
 			try
 			{
-				if (e.Channel.IsPrivate == false && servers.FindIndex(x => x.Id == e.Guild.Id) != -1 && servers.Find(x => x.Id == e.Guild.Id).EnabledModules.HasFlag(Modules.Levelling))
+				if (e.Message.Author.IsBot == true || e.Channel.IsPrivate == true || servers.FindIndex(x => x.Id == e.Guild.Id) == -1 || !servers.Find(x => x.Id == e.Guild.Id).EnabledModules.HasFlag(Modules.Levelling) || servers.Find(x => x.Id == e.Guild.Id).channelxpexclude.Contains(e.Guild.Id))
 				{
-					RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
-					if (e.Message.Author.IsBot == false && (!s.channelxpexclude.Contains(e.Guild.Id)))
+					return;
+				}
+
+				RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
+
+				if (s.timedoutedusers.ContainsKey(e.Message.Author.Id) && DateTime.Now - s.timedoutedusers[e.Message.Author.Id] >= s.CoolDown)
+				{
+					s.timedoutedusers[e.Message.Author.Id] = DateTime.Now;
+					AddXp(e);
+				}
+				else
+				{
+					s.timedoutedusers.Add(e.Message.Author.Id, DateTime.Now);
+					AddXp(e);
+				}
+
+				int userslevel = 0;
+				int j = 0;
+				bool isDone = false;
+				try
+				{
+					foreach (LevelRole i in s.lvlroles)
 					{
-						if (s.timedoutedusers.ContainsKey(e.Message.Author.Id))
+						if (i.XpReq <= s.xplist[e.Author.Id] && i.RoleId != 0)
 						{
-							if (DateTime.Now - s.timedoutedusers[e.Message.Author.Id] >= s.CoolDown)
+							userslevel++;
+							j++;
+							if ((await e.Guild.GetMemberAsync(e.Author.Id)).Roles.ToList().FindIndex(x => x.Id == i.RoleId) != -1)
 							{
-								s.timedoutedusers[e.Message.Author.Id] = DateTime.Now;
-								AddXp(e);
+								break;
+							}
+
+							await (await e.Guild.GetMemberAsync(e.Author.Id)).GrantRoleAsync(e.Guild.GetRole(i.RoleId));
+							if (j == s.lvlroles.Count - 1)
+							{
+								isDone = true;
+								break;
 							}
 						}
 						else
 						{
-							s.timedoutedusers.Add(e.Message.Author.Id, DateTime.Now);
-							AddXp(e);
-						}
-						int userslevel = 0;
-						int j = 0;
-						bool isDone = false;
-						try
-						{
-							foreach (LevelRole i in s.lvlroles)
+							if (i.RoleId == 0 || (await e.Guild.GetMemberAsync(e.Author.Id)).Roles.Contains(e.Guild.GetRole(i.RoleId)))
 							{
-								if (i.XpReq <= s.xplist[e.Author.Id] && i.RoleId != 0)
-								{
-									userslevel++;
-									j++;
-									if (!(await e.Guild.GetMemberAsync(e.Author.Id)).Roles.Contains(e.Guild.GetRole(i.RoleId)))
-									{
-										await (await e.Guild.GetMemberAsync(e.Author.Id)).GrantRoleAsync(e.Guild.GetRole(i.RoleId));
-										if (j == s.lvlroles.Count - 1)
-										{
-											isDone = true;
-											break;
-										}
-									}
-								}
-								else
-								{
-									if (i.RoleId != 0 && (await e.Guild.GetMemberAsync(e.Author.Id)).Roles.Contains(e.Guild.GetRole(i.RoleId)))
-									{
-										await (await e.Guild.GetMemberAsync(e.Author.Id))
-										.RevokeRoleAsync(
-											e
-											.Guild
-											.GetRole(
-												s.lvlroles[
-													s.lvlroles.FindIndex(
-														x => x.RoleId == i.RoleId
-													)
-												]
-												.RoleId
-											)
-										);
-									}
-								}
+								break;
 							}
-							if (isDone == true)
-							{
-								await discord.SendMessageAsync(e.Channel, new DiscordEmbedBuilder { Description = $"**{e.Author.Mention}**'s wurde aufgelevelt zu **{userslevel}**!", Color = DiscordColor.Green });
-							}
-							servers[servers.FindIndex(x => x.Id == e.Guild.Id)].xplist[e.Message.Author.Id] = s.xplist[e.Message.Author.Id];
-							File.WriteAllText("config/RegServers.json", JsonConvert.SerializeObject(servers));
-						}
-						catch (DSharpPlus.Exceptions.UnauthorizedException)
-						{
-							await e.Channel.SendMessageAsync("Ich habe keine Berechtigungen, um Rollen zu ändern!");
+							await (await e.Guild.GetMemberAsync(e.Author.Id))
+							.RevokeRoleAsync(
+								e
+								.Guild
+								.GetRole(
+									s.lvlroles[
+										s.lvlroles.FindIndex(
+											x => x.RoleId == i.RoleId
+										)
+									]
+									.RoleId
+								)
+							);
 						}
 					}
+					if (isDone == true)
+					{
+						await discord.SendMessageAsync(e.Channel, new DiscordEmbedBuilder { Description = $"**{e.Author.Mention}**'s wurde aufgelevelt zu **{userslevel}**!", Color = DiscordColor.Green });
+					}
+					servers[servers.FindIndex(x => x.Id == e.Guild.Id)].xplist[e.Message.Author.Id] = s.xplist[e.Message.Author.Id];
+					File.WriteAllText("config/RegServers.json", JsonConvert.SerializeObject(servers, Formatting.Indented));
+				}
+				catch (DSharpPlus.Exceptions.UnauthorizedException)
+				{
+					await e.Channel.SendMessageAsync("Ich habe keine Berechtigungen, um Rollen zu ändern!");
 				}
 			}
 			catch (Exception ex)
@@ -101,28 +102,29 @@ namespace Sylt51bot
 		}
 		public static async void AddXp(MessageCreateEventArgs e, int amount = -1)
 		{
-			if(servers.FindIndex(x=> x.Id == e.Guild.Id) != -1)
+			if(servers.FindIndex(x=> x.Id == e.Guild.Id) == -1)
 			{
-				RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
-				if (amount == -1)
-				{
-					amount = new Random().Next(s.MinXp, s.MaxXp + 1);
-				}
-				if (s.xplist.ContainsKey(e.Message.Author.Id))
-				{
-					s.xplist[e.Message.Author.Id] += amount;
-				}
-				else
-				{
-					s.xplist.Add(e.Message.Author.Id, amount);
-				}
-				servers[servers.IndexOf(s)] = s;
-				File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+				servers.Add(new RegisteredServer { Id = e.Guild.Id });
+			}
+
+			RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
+
+			if (amount == -1)
+			{
+				amount = new Random().Next(s.MinXp, s.MaxXp + 1);
+			}
+
+			if (s.xplist.ContainsKey(e.Message.Author.Id))
+			{
+				s.xplist[e.Message.Author.Id] += amount;
 			}
 			else
 			{
-				await e.Message.RespondAsync(new DiscordEmbedBuilder { Description = "Dieser server ist nicht im xp-System registriert D:!\nBenutze `=lvledit` um anzufangen", Color = DiscordColor.Red });
+				s.xplist.Add(e.Message.Author.Id, amount);
 			}
+
+			servers[servers.FindIndex(x => x.Id == e.Guild.Id)] = s;
+			File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Formatting.Indented));
 		}
 	}
 
@@ -137,12 +139,13 @@ namespace Sylt51bot
 				if (servers.FindIndex(x => x.Id == e.Guild.Id) == -1)
 				{
 					servers.Add(new RegisteredServer { Id = e.Guild.Id });
-					File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+					File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Formatting.Indented));
 				}
+
 				List<LevelRole> roles = servers.Find(x => x.Id == e.Guild.Id).lvlroles;
 				int i = 0;
 				string embedstring = "";
-				if (roles.Count() == 0)
+				if (roles.Count() == 1)
 				{
 					embedstring = "Es gibt noch keine Rollen die mit Leveln verbunden sind!";
 					await discord.SendMessageAsync(await discord.GetChannelAsync(e.Message.Channel.Id), embed);
@@ -176,7 +179,7 @@ namespace Sylt51bot
 				if (servers.FindIndex(x => x.Id == e.Guild.Id) == -1)
 				{
 					servers.Add(new RegisteredServer { Id = e.Guild.Id });
-					File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+					File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Formatting.Indented));
 				}
 				RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
 				DiscordEmbedBuilder embed = new DiscordEmbedBuilder { Footer = new DiscordEmbedBuilder.EmbedFooter { Text = $"Page {page}/{Math.Ceiling((double)s.xplist.Count / 5)}" }, Color = DiscordColor.Green, Title = "Server XP rangliste", Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail { Url = e.Guild.IconUrl } };
@@ -251,11 +254,12 @@ namespace Sylt51bot
 				{
 					user = e.Message.Author;
 				}
-				if (servers.FindIndex(x => x.Id == e.Guild.Id) != -1)
+				if (servers.FindIndex(x => x.Id == e.Guild.Id) == -1)
 				{
 					servers.Add(new RegisteredServer { Id = e.Guild.Id });
-					File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+					File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Formatting.Indented));
 				}
+
 				RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
 				if (s.xplist.ContainsKey(user.Id))
 				{
@@ -331,61 +335,51 @@ namespace Sylt51bot
 			try
 			{
 
-				if (e.Guild.Roles.Values.Contains<DiscordRole>(role))
+				if (e.Guild.Roles.Values.ToList().FindIndex(x => x.Id == role.Id) == -1)
 				{
-					bool didExist = false;
-					if (servers.FindIndex(x => x.Id == e.Guild.Id) != -1)
-					{
-						servers.Add(new RegisteredServer { Id = e.Guild.Id });
-						File.WriteAllText("config/RegServers.json", JsonConvert.SerializeObject(servers));
-					}
-					RegisteredServer s = servers[servers.FindIndex(x => x.Id == e.Guild.Id)];
-					if (s.lvlroles.Find(x => x.XpReq == 0) == null)
-					{
-						s.lvlroles.Add(new LevelRole { XpReq = 0, RoleId = 0, Name = "Keine Rolle" });
-					}
-					if (s.lvlroles.Find(x => x.RoleId == role.Id) != null)
-					{
-						didExist = true;
-						var therole = s.lvlroles.Find(x => x.RoleId == role.Id);
-						if (score <= 0)
-						{
-							s.lvlroles.Remove(s.lvlroles[s.lvlroles.FindIndex(x => x.RoleId == role.Id)]);
-							await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Description = $"Rolle {role.Name} gelöscht", Color = DiscordColor.Green });
-							if (s.lvlroles.Count() == 1 && s.lvlroles[0].XpReq == 0)
-							{
-								servers.Remove(servers.Find(x => x.Id == e.Guild.Id));
-							}
-						}
-						else
-						{
-							s.lvlroles.Find(x => x.RoleId == role.Id);
-							s.lvlroles[s.lvlroles.FindIndex(x => x.RoleId == role.Id)].XpReq = score;
-							var sortedleederboard = from entry in s.lvlroles orderby entry.XpReq ascending select entry;
-							var list = sortedleederboard.ToList();
-							s.lvlroles = list;
+					await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = $"Rolle **{role.Name}** existiert nicht in diesem Server!" });
+					return;
+				}
 
-							await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Description = $"Rolle {role.Name} bearbeitet", Color = DiscordColor.Green });
-						}
+				if (servers.FindIndex(x => x.Id == e.Guild.Id) == -1)
+				{
+					servers.Add(new RegisteredServer { Id = e.Guild.Id });
+					File.WriteAllText("config/RegServers.json", JsonConvert.SerializeObject(servers, Formatting.Indented));
+				}
+
+				RegisteredServer s = servers[servers.FindIndex(x => x.Id == e.Guild.Id)];
+
+				if (s.lvlroles.FindIndex(x => x.RoleId == role.Id) != -1)
+				{
+					LevelRole therole = s.lvlroles.Find(x => x.RoleId == role.Id);
+					if (score <= 0)
+					{
+						s.lvlroles.Remove(s.lvlroles[s.lvlroles.FindIndex(x => x.RoleId == role.Id)]);
+						await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Description = $"Rolle {role.Name} gelöscht", Color = DiscordColor.Green });
 					}
 					else
 					{
-						s.lvlroles.Add(new LevelRole { Name = role.Name, XpReq = score, RoleId = role.Id });
+						s.lvlroles.Find(x => x.RoleId == role.Id);
+						s.lvlroles[s.lvlroles.FindIndex(x => x.RoleId == role.Id)].XpReq = score;
 						var sortedleederboard = from entry in s.lvlroles orderby entry.XpReq ascending select entry;
 						var list = sortedleederboard.ToList();
 						s.lvlroles = list;
+
+						await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Description = $"Rolle {role.Name} bearbeitet", Color = DiscordColor.Green });
 					}
-					servers[servers.FindIndex(x => x.Id == e.Guild.Id)] = s;
-					if (didExist == false)
-					{
-						await e.Message.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Rolle **{role.Name}** wurde zu **{e.Guild.Name}**'s Levelrollen hinzugefügt!" });
-					}
-					File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
 				}
 				else
 				{
-					await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Rolle **{role.Name}** existiert nicht in diesem Server!" });
+					s.lvlroles.Add(new LevelRole { Name = role.Name, XpReq = score, RoleId = role.Id });
+					var sortedleederboard = from entry in s.lvlroles orderby entry.XpReq ascending select entry;
+					var list = sortedleederboard.ToList();
+					s.lvlroles = list;
+					await e.Message.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Rolle **{role.Name}** wurde zu **{e.Guild.Name}**'s Levelrollen hinzugefügt!" });
 				}
+
+				servers[servers.FindIndex(x => x.Id == e.Guild.Id)] = s;
+
+				File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Formatting.Indented));
 			}
 			catch (Exception ex)
 			{
@@ -400,10 +394,10 @@ namespace Sylt51bot
 			{
 				if (xp >= 0)
 				{
-					if (servers.FindIndex(x => x.Id == e.Guild.Id) != -1)
+					if (servers.FindIndex(x => x.Id == e.Guild.Id) == -1)
 					{
 						servers.Add(new RegisteredServer { Id = e.Guild.Id });
-						File.WriteAllText("config/RegServers.json", JsonConvert.SerializeObject(servers));
+						File.WriteAllText("config/RegServers.json", JsonConvert.SerializeObject(servers, Formatting.Indented));
 					}
 					if (await e.Guild.GetMemberAsync(user.Id) != null)
 					{
@@ -432,7 +426,7 @@ namespace Sylt51bot
 					{
 						await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = $"Nutzer nicht gefunden!" });
 					}
-					File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+					File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Formatting.Indented));
 				}
 				else
 				{
@@ -450,10 +444,10 @@ namespace Sylt51bot
 		{
 			try
 			{
-				if (servers.FindIndex(x => x.Id == e.Guild.Id) != -1)
+				if (servers.FindIndex(x => x.Id == e.Guild.Id) == -1)
 				{
 					servers.Add(new RegisteredServer { Id = e.Guild.Id });
-					File.WriteAllText("config/RegServers.json", JsonConvert.SerializeObject(servers));
+					File.WriteAllText("config/RegServers.json", JsonConvert.SerializeObject(servers, Formatting.Indented));
 				}
 				RegisteredServer s = servers[servers.FindIndex(x => x.Id == e.Guild.Id)];
 				if (e.Guild.GetChannel(channel.Id) != null)
@@ -473,7 +467,7 @@ namespace Sylt51bot
 						await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Kanal {channel.Mention} ist nun vom xp verdienen ausgenommen!" });
 					}
 					servers[servers.FindIndex(x => x.Id == e.Guild.Id)] = s;
-					File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+					File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Formatting.Indented));
 				}
 				else
 				{
@@ -499,7 +493,7 @@ namespace Sylt51bot
 				{
 					servers[servers.FindIndex(x => x.Id == serverid)].xplist = new Dictionary<ulong, int>();
 				}
-				File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+				File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Formatting.Indented));
 				await discord.SendMessageAsync(e.Message.Channel, new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Setzt XP vom ganzem Server zurück{serverid}!" });
 			}
 			catch (Exception ex)
