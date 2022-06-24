@@ -91,6 +91,8 @@ namespace Sylt51bot
 				commands.RegisterCommands<LevelCommands>();
 				commands.RegisterCommands<BotAdminCommands>();
 				commands.RegisterCommands<GenCommands>();
+				commands.RegisterCommands<ConfigCommands>();
+
                 discord.MessageCreated += async (client, e) =>
                 {
 					if(servers.FindIndex(x => x.Id == e.Guild.Id) == -1)
@@ -143,11 +145,11 @@ namespace Sylt51bot
 					}
                 };
 
-				discord.GuildCreated += async (client, e) =>
+				discord.GuildCreated += (client, e) =>
 				{
 					if (servers.FindIndex(x => x.Id == e.Guild.Id) != -1)
 					{
-						return;
+						return Task.CompletedTask;
 					}
 					RegisteredServer newJoinedServer = new RegisteredServer
 					{
@@ -155,6 +157,7 @@ namespace Sylt51bot
 					};
 					servers.Add(newJoinedServer);
 					File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Formatting.Indented));
+					return Task.CompletedTask;
 				};
 
 
@@ -498,6 +501,12 @@ namespace Classes
 		Levelling = 0b01,
 		Rechenknecht = 0b10,
 		All = 0b11
+	}
+
+	[Flags]
+	public enum CommandClasses
+	{
+		//WIP
 	}
 
 	[System.Runtime.Serialization.DataContract]

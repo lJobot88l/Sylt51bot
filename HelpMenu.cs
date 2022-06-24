@@ -90,6 +90,7 @@ namespace Sylt51bot
 			string othercommands = "|";
 			string xpcommands = "|";
 			string modcommands = "|";
+			string configcommands = "|";
 			List<string> e = new List<string>();
 			foreach (var cmd in cmds)
 			{
@@ -111,32 +112,37 @@ namespace Sylt51bot
 						case "ModCommands":
 							modcommands += $" `{cmd.Name}` |";
 							break;
+						case "ConfigCommands":
+							configcommands += $" `{cmd.Name}` |";
+							break;
 						default:
 							Console.WriteLine("err");
 							break;
 					}
 				}
-				catch (Exception ex)
+				catch 
 				{
 				}
-				// _strBuilder.AppendLine($"{cmd.Name} - {cmd.Description}");
-			}
-			if(owneronlycommands != "|")
-			{
-				_embed.AddField("Besitzerbefehle", owneronlycommands, true);
-			}
-			if(modcommands != "|")
-			{
-				_embed.AddField("Moderatorbefehle", modcommands, true);
 			}
 			if (othercommands != "|")
 			{
 				_embed.AddField("Sonstige Befehle", othercommands, true);
 			}
-			//_embed.AddField("Self Role Commands", selfrolecommands);
 			if (xpcommands != "|")
 			{
 				_embed.AddField("Level Befehle", xpcommands, true);
+			}
+			if (configcommands != "|")
+			{
+				_embed.AddField("Konfigurations Befehle", configcommands, true);
+			}
+			if(modcommands != "|")
+			{
+				_embed.AddField("Moderatorbefehle", modcommands, true);
+			}
+			if(owneronlycommands != "|")
+			{
+				_embed.AddField("Besitzerbefehle", owneronlycommands, true);
 			}
 			_embed.AddField("Nützliche Links", $"[Discord]({cInf.DiscordInvite}) | [GitHub]({cInf.GitHub}) | [Bot Einladung](https://discord.com/oauth2/authorize?client_id={discord.CurrentUser.Id}&scope=bot&permissions=805317632)", false);
 			_embed.WithFooter($"Version {cInf.Version}");

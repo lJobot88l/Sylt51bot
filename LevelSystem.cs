@@ -92,7 +92,7 @@ namespace Sylt51bot
 				await AlertException(e, ex);
 			}
 		}
-		public static async void AddXp(MessageCreateEventArgs e, int amount = -1)
+		public static void AddXp(MessageCreateEventArgs e, int amount = -1)
 		{
 			if(servers.FindIndex(x=> x.Id == e.Guild.Id) == -1)
 			{
