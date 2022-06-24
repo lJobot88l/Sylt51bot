@@ -52,35 +52,27 @@ namespace Sylt51bot
 							j++;
 							if ((await e.Guild.GetMemberAsync(e.Author.Id)).Roles.ToList().FindIndex(x => x.Id == i.RoleId) != -1)
 							{
-								break;
+								await (await e.Guild.GetMemberAsync(e.Author.Id)).GrantRoleAsync(e.Guild.GetRole(i.RoleId));
+								if (j == s.lvlroles.Count - 1)
+								{
+									isDone = true;
+									break;
+								}
 							}
 
-							await (await e.Guild.GetMemberAsync(e.Author.Id)).GrantRoleAsync(e.Guild.GetRole(i.RoleId));
-							if (j == s.lvlroles.Count - 1)
-							{
-								isDone = true;
-								break;
-							}
 						}
 						else
 						{
-							if (i.RoleId == 0 || (await e.Guild.GetMemberAsync(e.Author.Id)).Roles.Contains(e.Guild.GetRole(i.RoleId)))
+							j++;
+							if ((await e.Guild.GetMemberAsync(e.Author.Id)).Roles.ToList().FindIndex(x => x.Id == i.RoleId) != -1)
 							{
-								break;
+								await (await e.Guild.GetMemberAsync(e.Author.Id)).RevokeRoleAsync(e.Guild.GetRole(s.lvlroles.Find(x => x.RoleId == i.RoleId).RoleId));
+								if (j == s.lvlroles.Count - 1)
+								{
+									isDone = true;
+									break;
+								}
 							}
-							await (await e.Guild.GetMemberAsync(e.Author.Id))
-							.RevokeRoleAsync(
-								e
-								.Guild
-								.GetRole(
-									s.lvlroles[
-										s.lvlroles.FindIndex(
-											x => x.RoleId == i.RoleId
-										)
-									]
-									.RoleId
-								)
-							);
 						}
 					}
 					if (isDone == true)

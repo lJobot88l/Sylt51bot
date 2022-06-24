@@ -30,6 +30,7 @@ namespace Sylt51bot
                 if (File.Exists("config/mconfig.json"))
                 {
                     cInf = Newtonsoft.Json.JsonConvert.DeserializeObject<SetupInfo>(File.ReadAllText("config/mconfig.json"));
+					cInf.Version = new SetupInfo().Version;
                     if(File.Exists("config/RegServers.json"))
                     {
                         servers = Newtonsoft.Json.JsonConvert.DeserializeObject<List<RegisteredServer>>(File.ReadAllText("config/RegServers.json"));
@@ -144,15 +145,16 @@ namespace Sylt51bot
 
 				discord.GuildCreated += async (client, e) =>
 				{
-					if(servers.FindIndex(x => x.Id == e.Guild.Id) == -1)
+					if (servers.FindIndex(x => x.Id == e.Guild.Id) != -1)
 					{
-						RegisteredServer newJoinedServer = new RegisteredServer
-						{
-							Id = e.Guild.Id
-						};
-						servers.Add(newJoinedServer);
-						File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Formatting.Indented));
+						return;
 					}
+					RegisteredServer newJoinedServer = new RegisteredServer
+					{
+						Id = e.Guild.Id
+					};
+					servers.Add(newJoinedServer);
+					File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Formatting.Indented));
 				};
 
 
@@ -475,7 +477,7 @@ namespace Classes
 		public ulong Id { get; set; }
         public Dictionary<ulong, int> xplist { get; set; } = new Dictionary<ulong, int>();
         public Dictionary<ulong, DateTime> timedoutedusers { get; set; } = new Dictionary<ulong, DateTime>();
-        public List<LevelRole> lvlroles { get; set; } = new List<LevelRole> { new LevelRole { RoleId = 0, XpReq = 0, Name = "Keine Rolle"} };
+        public List<LevelRole> lvlroles { get; set; } = null;
         public List<ulong> channelxpexclude { get; set; } = new List<ulong>();
 		public int MinXp { get; set; } = 10;
 		public int MaxXp { get; set; } = 20;
