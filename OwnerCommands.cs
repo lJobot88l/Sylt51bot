@@ -13,7 +13,7 @@ namespace Sylt51bot
 {
 	public class BotAdminCommands : BaseCommandModule
 	{
-		[Command("addauth"), CommandClass(Classes.CommandClasses.OwnerCommands), Description("Fügt/Entfernt einen Benutzer aus der Liste der Adminbots\n\nBenutzung:\n```=addauth <ID / @mention >```"), RequireAuth()]
+		[Command("addauth"), CommandClass(Classes.CommandClasses.OwnerCommands), Description("Fügt/Entfernt einen Benutzer aus der Liste der Adminbots\n\nBenutzung:\n```=addauth < ID / @mention >```"), RequireAuth()]
 		public async Task AddAuth(CommandContext e, DiscordUser NewAdmin)
 		{
 			try
@@ -79,6 +79,31 @@ namespace Sylt51bot
 				{
 					await e.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = $"Schulden können nicht kleiner als 0 DM sein" });
 				}
+			}
+			catch (Exception ex)
+			{
+				await AlertException(e, ex);
+			}
+		}
+
+		[Command("globalexclude"), Description("Exkludiert einen Nutzer global vom Benutzen des Bots\n\nBenutzung:\n```=globalexclude < ID / @mention >```"), RequireAuth, CommandClass(Classes.CommandClasses.OwnerCommands), IsExclude]
+		public async Task GlobalExclude(CommandContext e, DiscordUser u)
+		{
+			try
+			{
+				if(!cInf.GlobalBlockedUsers.Contains(u.Id))
+				{
+					cInf.GlobalBlockedUsers.Add(u.Id);
+					await e.Message.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Benutzer {u.Username}#{u.Discriminator} wurde von der globalen Nutzung des Bots gebannt"});
+				}
+				else
+				{
+					cInf.GlobalBlockedUsers.Remove(u.Id);
+					await e.Message.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Green, Description = $"Benutzer {u.Username}#{u.Discriminator} wurde von der globalen Nutzung des Bots entbannt" });
+
+				}
+					File.WriteAllText("config/mconfig.json", Newtonsoft.Json.JsonConvert.SerializeObject(cInf));
+					File.WriteAllText("config/mconfig.json", Newtonsoft.Json.JsonConvert.SerializeObject(cInf));
 			}
 			catch (Exception ex)
 			{

@@ -62,8 +62,7 @@ namespace Sylt51bot
                 {
                     StringPrefixes = cInf.Prefixes,
                     CaseSensitive = false,
-                    EnableDefaultHelp = true,
-                    DefaultHelpChecks = new List<CheckBaseAttribute>()
+                    EnableDefaultHelp = true
                 };
                 dCfg = new DiscordConfiguration
                 {
@@ -209,12 +208,16 @@ namespace Sylt51bot
 					if (failedCheck is RequireGuildAttribute)
 					{
 						RequireGuildAttribute guild = (RequireGuildAttribute)failedCheck;
-						embed.AddField("Server only", "This command can not be used in DMs.");
+						embed.AddField("Server only", "Dieser Befehl kann nicht in DMs verwendet werden");
 					}
 					if(failedCheck is CAttributes.ModuleAttribute)
 					{
 						CAttributes.ModuleAttribute mod = (CAttributes.ModuleAttribute)failedCheck;
 						embed.AddField("Das folgende Modul muss aktiviert sein:", $"```{mod.module}```");
+					}
+					if(failedCheck is CAttributes.IsExcludeAttribute)
+					{
+						embed.AddField("Gesperrt", "Du bist auf diesem server oder global von dem bot gesperrt");
 					}
 					embed.AddField("Error:", $"```{e.Exception.ToString()}```");
 				}
@@ -242,7 +245,7 @@ namespace Sylt51bot
 
 		public static async Task AlertException(MessageCreateEventArgs e, Exception ex)
 		{
-			await e.Message.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = "An error occured" });
+			await e.Message.RespondAsync(new DiscordEmbedBuilder { Color = DiscordColor.Red, Description = "Ein Fehler ist aufgetreten" });
 			Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(ex, Formatting.Indented));
 			await discord.SendMessageAsync(await discord.GetChannelAsync(cInf.ErrorHbChannel), Newtonsoft.Json.JsonConvert.SerializeObject(ex, Formatting.Indented));
 		}
@@ -457,6 +460,16 @@ namespace CAttributes
             return (pbot & this.Permissions) == this.Permissions;
         }
     }
+
+	[AttributeUsage(AttributeTargets.All, AllowMultiple = false)]
+	public class IsExcludeAttribute : CheckBaseAttribute
+	{
+
+		public override Task<bool> ExecuteCheckAsync(CommandContext e, bool help)
+		{
+			return Task.FromResult(!Sylt51bot.Program.servers.Find(x => x.Id == e.Guild.Id).ServerBlockedUsers.Contains(e.Message.Author.Id) && !Sylt51bot.Program.cInf.GlobalBlockedUsers.Contains(e.Message.Author.Id));
+		}
+	}
 }
 
 namespace Classes
@@ -471,6 +484,7 @@ namespace Classes
 		public string DiscordInvite { get; set; } = null;
 		public string GitHub { get; set; } = null;
         public List<ulong> AuthUsers { get; set; } = new List<ulong>();
+		public List<ulong> GlobalBlockedUsers { get; set; } = new List<ulong>();
 		public double SchuldenDerDDR { get; set; } = 86300000000;
 		public string Version = "1.1.2a";
 	}
@@ -486,6 +500,7 @@ namespace Classes
 		public int MaxXp { get; set; } = 20;
 		public TimeSpan CoolDown { get; set; } = TimeSpan.FromMinutes(2);
 		public Modules EnabledModules { get; set; } = Modules.Rechenknecht;
+		public List<ulong> ServerBlockedUsers { get; set; } = new List<ulong>();
 	}
 
 	public class LevelRole
@@ -506,20 +521,46 @@ namespace Classes
 	[Flags]
 	public enum CommandClasses
 	{
-		[System.Runtime.Serialization.EnumMember(Value = "Besitzerbefehle")]
-		OwnerCommands,
+		[System.ComponentModel.Description("Konfigurationsbefehle")]
+		ConfigCommands = 1,
 
-		[System.Runtime.Serialization.EnumMember(Value = "Moderatorbefehle")]
-		ModCommands,
+		[System.ComponentModel.Description("Levelbefehle")]
+		LevelCommands = 2,
 
-		[System.Runtime.Serialization.EnumMember(Value = "Levelbefehle")]
-		LevelCommands,
 
-		[System.Runtime.Serialization.EnumMember(Value = "Konfigurationsbefehle")]
-		ConfigCommands,
+		[System.ComponentModel.Description("Andere Befehle")]
+		OtherCommands = 4,
 
-		[System.Runtime.Serialization.EnumMember(Value = "Andere Befehle")]
-		OtherCommands
+		[System.ComponentModel.Description("Moderatorbefehle")]
+		ModCommands = 8,
+
+		[System.ComponentModel.Description("Besitzerbefehle")]
+		OwnerCommands = 16
+	}
+
+	public static class EnumExtensions
+	{
+
+		// This extension method is broken out so you can use a similar pattern with 
+		// other MetaData elements in the future. This is your base method for each.
+		public static T GetAttribute<T>(this Enum value) where T : Attribute
+		{
+			var type = value.GetType();
+			var memberInfo = type.GetMember(value.ToString());
+			var attributes = memberInfo[0].GetCustomAttributes(typeof(T), false);
+			return attributes.Length > 0
+			  ? (T)attributes[0]
+			  : null;
+		}
+
+		// This method creates a specific call to the above method, requesting the
+		// Description MetaData attribute.
+		public static string ToName(this Enum value)
+		{
+			var attribute = value.GetAttribute<System.ComponentModel.DescriptionAttribute>();
+			return attribute == null ? value.ToString() : attribute.Description;
+		}
+
 	}
 
 	[System.Runtime.Serialization.DataContract]

@@ -11,38 +11,45 @@ namespace Sylt51bot
 {
 	public class ConfigCommands : BaseCommandModule
 	{
-		[Command("config"), Description("Zeigt die aktuelle Konfiguration des servers\n\nBenutzung:\n```=config```"), CommandClass(CommandClasses.ConfigCommands)]
-		public async Task ListCfg(CommandContext e)
+		[Command("config"), Description("Zeigt die aktuelle Konfiguration des servers\n\nBenutzung:\n```=config```"), CommandClass(CommandClasses.ConfigCommands), IsExclude()]
+		public async Task ListCfg(CommandContext e, string format = "n")
 		{
 			try
 			{
 				DiscordEmbedBuilder embed = new DiscordEmbedBuilder { Color = DiscordColor.Green, Title = $"Server Konfiguration für server {e.Guild.Name}" };
 				RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
-				string enModules = "";
-				string lvlroles = "";
-
-				foreach (var module in Enum.GetValues(typeof(Classes.Modules)))
+				
+				if(format == "n")
 				{
-					if ((int)module != 0b11)
-					{
-						enModules += $"{module.ToString()}: {servers.Find(x => x.Id == e.Guild.Id).EnabledModules.HasFlag((Enum)module)}\n";
-					}
-				}
+					string enModules = "";
+					string lvlroles = "";
 
-				foreach(LevelRole l in s.lvlroles)
+					foreach (var module in Enum.GetValues(typeof(Classes.Modules)))
+					{
+						if ((int)module != 0b11)
+						{
+							enModules += $"{module.ToString()}: {servers.Find(x => x.Id == e.Guild.Id).EnabledModules.HasFlag((Enum)module)}\n";
+						}
+					}
+
+					foreach(LevelRole l in s.lvlroles)
+					{
+						if(l.RoleId != 0)
+						{
+							lvlroles += $"{l.Name} : {l.XpReq}xp (ID:{l.RoleId})\n";
+						}
+					}
+
+					embed.AddField("Generelles",
+					$"```Id: {s.Id.ToString()}\nName: {e.Guild.Name}```");
+					embed.AddField("Module", $"```{enModules}```");
+					if(!string.IsNullOrEmpty(lvlroles)) { embed.AddField("Levelrollen", $"```{lvlroles}```"); }
+					embed.AddField("Xp Optionen", $"```Mindest vergebenes xp: {s.MinXp}xp\nMaximal vergebenes xp: {s.MaxXp}xp\nXp cooldown: {s.CoolDown}```");
+				}
+				if(format == "json")
 				{
-					if(l.RoleId != 0)
-					{
-						lvlroles += $"{l.Name} : {l.XpReq}xp (ID:{l.RoleId})\n";
-					}
+					embed.Description = $"```json\n{Newtonsoft.Json.JsonConvert.SerializeObject(s, Newtonsoft.Json.Formatting.Indented)}```";
 				}
-
-				embed.AddField("Generelles",
-				$"```Id: {s.Id.ToString()}\nName: {e.Guild.Name}```");
-				embed.AddField("Module", $"```{enModules}```");
-				if(!string.IsNullOrEmpty(lvlroles)) { embed.AddField("Levelrollen", $"```{lvlroles}```"); }
-				embed.AddField("Xp Optionen", $"```Mindest vergebenes xp: {s.MinXp}xp\nMaximal vergebenes xp: {s.MaxXp}xp\nXp cooldown: {s.CoolDown}```");
-
 				await e.RespondAsync(embed);
 			}
 			catch(Exception ex)

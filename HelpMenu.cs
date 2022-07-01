@@ -1,4 +1,5 @@
 using System;
+using Classes;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -54,25 +55,17 @@ namespace Sylt51bot
 			var p = command.ExecutionChecks.ToList();
 			string permstr = "";
 			string permstr2 = "";
-			foreach (var p1 in p)
+
+			if(command.ExecutionChecks.ToList().FindIndex(x => x.GetType() == typeof(CAttributes.RequireBotPermissions2Attribute)) != -1)
 			{
-				if (p1.GetType() == typeof(RequireBotPermissionsAttribute))
-				{
-					permstr += ((RequireBotPermissionsAttribute)p1).Permissions.ToString() + " ";
-				}
-				if (p1.GetType() == typeof(RequireUserPermissionsAttribute))
-				{
-					permstr2 += ((RequireUserPermissionsAttribute)p1).Permissions.ToString() + " ";
-				}
+				permstr = $"**Meine Berechtigungen:** ```{((CAttributes.RequireBotPermissions2Attribute)command.ExecutionChecks.ToList().Find(x => x.GetType() == typeof(CAttributes.RequireBotPermissions2Attribute))).Permissions}```\n";
 			}
-			if (permstr != "")
+
+			if (command.ExecutionChecks.ToList().FindIndex(x => x.GetType() == typeof(CAttributes.RequireUserPermissions2Attribute)) != -1)
 			{
-				permstr = $"**Meine Berechtigungen:** ```{permstr}```\n";
+				permstr = $"**Meine Berechtigungen:** ```{((CAttributes.RequireUserPermissions2Attribute)command.ExecutionChecks.ToList().Find(x => x.GetType() == typeof(CAttributes.RequireUserPermissions2Attribute))).Permissions}```\n";
 			}
-			if (permstr2 != "")
-			{
-				permstr2 = $"**Deine Berechtigungen:** ```{permstr2}```";
-			}
+
 			if (permstr != "" || permstr2 != "")
 			{
 				_embed.AddField("Berechtigungen", permstr + permstr2);
@@ -93,17 +86,28 @@ namespace Sylt51bot
 				List<string> e = new List<string>();
 				foreach(Command cmd in cmds)
 				{
+					if(cmd.CustomAttributes.ToList().FindIndex(x => x.GetType() == typeof(CommandClassAttribute)) == -1)
+					{
+						continue;
+					}
 					if(((CommandClassAttribute)cmd.CustomAttributes.ToList().Find(x => x.GetType() == typeof(CommandClassAttribute))).Classname.HasFlag((Enum)cclass))
 					{
 						e.Add(cmd.Name);
 					}
 				}
 				e = (from entry in e orderby (short)entry[0] ascending select entry).ToList<string>();
+
 				foreach(string i in e)
 				{
-					cmdinmod += $"{i} |";
+					cmdinmod += $" `{i}` |";
 				}
-				_embed.AddField(cclass.ToString(), cmdinmod, true);
+
+				if(cmdinmod == "|")
+				{
+					continue;
+				}
+
+				_embed.AddField(((Enum)cclass).ToName(), cmdinmod, true);
 			}
 			
 			_embed.AddField("Nützliche Links", $"[Discord]({cInf.DiscordInvite}) | [GitHub]({cInf.GitHub}) | [Bot Einladung](https://discord.com/oauth2/authorize?client_id={discord.CurrentUser.Id}&scope=bot&permissions=805317632)", false);
