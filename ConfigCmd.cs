@@ -11,7 +11,7 @@ namespace Sylt51bot
 {
 	public class ConfigCommands : BaseCommandModule
 	{
-		[Command("config"), Description("Zeigt die aktuelle Konfiguration des servers\n\nBenutzung:\n```=config```"), CommandClass("OtherCommands")]
+		[Command("config"), Description("Zeigt die aktuelle Konfiguration des servers\n\nBenutzung:\n```=config```"), CommandClass(CommandClasses.ConfigCommands)]
 		public async Task ListCfg(CommandContext e)
 		{
 			try
@@ -51,7 +51,7 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("togglemodule"), Description("Schaltet ein Modul an oder aus\n\nBenutzung:\n```=togglemodule <Modulname>```"), CommandClass("ModCommands"), RequireUserPermissions2(DSharpPlus.Permissions.ManageGuild)]
+		[Command("togglemodule"), Description("Schaltet ein Modul an oder aus\n\nBenutzung:\n```=togglemodule <Modulname>```"), CommandClass(CommandClasses.ConfigCommands), RequireUserPermissions2(DSharpPlus.Permissions.ManageGuild)]
 		public async Task ToggleModule(CommandContext e, string ModuleName = "help")
 		{
 			try

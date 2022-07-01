@@ -11,7 +11,7 @@ namespace Sylt51bot
 {
 	public class GenCommands : BaseCommandModule
 	{
-		[Command("ping"), Description("Zeigt an ob der bot funktioniert, oder nicht\n\nBenutzung:```ping```"), CommandClass("OtherCommands")]
+		[Command("ping"), Description("Zeigt an ob der bot funktioniert, oder nicht\n\nBenutzung:```ping```"), CommandClass(Classes.CommandClasses.OtherCommands)]
 		public async Task Ping(CommandContext e)
 		{
 			try

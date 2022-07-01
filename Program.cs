@@ -330,10 +330,10 @@ namespace CAttributes
 	[AttributeUsage(AttributeTargets.All, AllowMultiple = false)]
 	public class CommandClassAttribute : System.Attribute
 	{
-		public string classname { get; set; }
-		public CommandClassAttribute(string e)
+		public Classes.CommandClasses Classname { get; set; }
+		public CommandClassAttribute(Classes.CommandClasses e)
 		{
-			classname = e;
+			Classname = e;
 		}
 	}
 	
@@ -472,7 +472,7 @@ namespace Classes
 		public string GitHub { get; set; } = null;
         public List<ulong> AuthUsers { get; set; } = new List<ulong>();
 		public double SchuldenDerDDR { get; set; } = 86300000000;
-		public string Version = "1.1.1";
+		public string Version = "1.1.2a";
 	}
 
 	public class RegisteredServer
@@ -506,7 +506,20 @@ namespace Classes
 	[Flags]
 	public enum CommandClasses
 	{
-		//WIP
+		[System.Runtime.Serialization.EnumMember(Value = "Besitzerbefehle")]
+		OwnerCommands,
+
+		[System.Runtime.Serialization.EnumMember(Value = "Moderatorbefehle")]
+		ModCommands,
+
+		[System.Runtime.Serialization.EnumMember(Value = "Levelbefehle")]
+		LevelCommands,
+
+		[System.Runtime.Serialization.EnumMember(Value = "Konfigurationsbefehle")]
+		ConfigCommands,
+
+		[System.Runtime.Serialization.EnumMember(Value = "Andere Befehle")]
+		OtherCommands
 	}
 
 	[System.Runtime.Serialization.DataContract]

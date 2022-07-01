@@ -86,64 +86,26 @@ namespace Sylt51bot
 			_embed.Title = "Hilfe";
 			_embed.Description = "Mehr Informationen über einen Befehl mit `=help <befehlname>`";
 			_embed.Color = DiscordColor.Green;
-			string owneronlycommands = "|";
-			string othercommands = "|";
-			string xpcommands = "|";
-			string modcommands = "|";
-			string configcommands = "|";
-			List<string> e = new List<string>();
-			foreach (var cmd in cmds)
+
+			foreach (var cclass in Enum.GetValues(typeof(Classes.CommandClasses)))
 			{
-				var a = cmd.CustomAttributes.ToList().Find(x => x.GetType() == typeof(CommandClassAttribute));
-				CommandClassAttribute t = (CommandClassAttribute)a;
-				try
+				string cmdinmod = "|";
+				List<string> e = new List<string>();
+				foreach(Command cmd in cmds)
 				{
-					switch (t.classname)
+					if(((CommandClassAttribute)cmd.CustomAttributes.ToList().Find(x => x.GetType() == typeof(CommandClassAttribute))).Classname.HasFlag((Enum)cclass))
 					{
-						case "OwnerCommands":
-							owneronlycommands += $" `{cmd.Name}` |";
-							break;
-						case "OtherCommands":
-							othercommands += $" `{cmd.Name}` |";
-							break;
-						case "LevelCommands":
-							xpcommands += $" `{cmd.Name}` |";
-							break;
-						case "ModCommands":
-							modcommands += $" `{cmd.Name}` |";
-							break;
-						case "ConfigCommands":
-							configcommands += $" `{cmd.Name}` |";
-							break;
-						default:
-							Console.WriteLine("err");
-							break;
+						e.Add(cmd.Name);
 					}
 				}
-				catch 
+				e = (from entry in e orderby (short)entry[0] ascending select entry).ToList<string>();
+				foreach(string i in e)
 				{
+					cmdinmod += $"{i} |";
 				}
+				_embed.AddField(cclass.ToString(), cmdinmod, true);
 			}
-			if (othercommands != "|")
-			{
-				_embed.AddField("Sonstige Befehle", othercommands, true);
-			}
-			if (xpcommands != "|")
-			{
-				_embed.AddField("Level Befehle", xpcommands, true);
-			}
-			if (configcommands != "|")
-			{
-				_embed.AddField("Konfigurations Befehle", configcommands, true);
-			}
-			if(modcommands != "|")
-			{
-				_embed.AddField("Moderatorbefehle", modcommands, true);
-			}
-			if(owneronlycommands != "|")
-			{
-				_embed.AddField("Besitzerbefehle", owneronlycommands, true);
-			}
+			
 			_embed.AddField("Nützliche Links", $"[Discord]({cInf.DiscordInvite}) | [GitHub]({cInf.GitHub}) | [Bot Einladung](https://discord.com/oauth2/authorize?client_id={discord.CurrentUser.Id}&scope=bot&permissions=805317632)", false);
 			_embed.WithFooter($"Version {cInf.Version}");
 			return this;
