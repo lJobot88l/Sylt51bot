@@ -91,8 +91,9 @@ namespace Sylt51bot
 				commands.RegisterCommands<BotAdminCommands>();
 				commands.RegisterCommands<GenCommands>();
 				commands.RegisterCommands<ConfigCommands>();
+				commands.RegisterCommands<ModeratorCommands>();
 
-                discord.MessageCreated += async (client, e) =>
+				discord.MessageCreated += async (client, e) =>
                 {
 					if(servers.FindIndex(x => x.Id == e.Guild.Id) == -1)
 					{

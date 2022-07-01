@@ -9,7 +9,7 @@ namespace Sylt51bot
 {
 	public class ModeratorCommands : BaseCommandModule
 	{
-		[Command("exclude"), Description("Exkludiert einen Nutzer lokal auf dem server vom Benutzen des Bots\n\nBenutzung:\n```=globalexclude < ID / @mention >```"), RequireUserPermissions2(DSharpPlus.Permissions.ManageGuild), IsExclude]
+		[Command("exclude"), Description("Exkludiert einen Nutzer lokal auf dem server vom Benutzen des Bots\n\nBenutzung:\n```=globalexclude < ID / @mention >```"), RequireUserPermissions2(DSharpPlus.Permissions.ManageGuild), IsExclude, CommandClass(Classes.CommandClasses.ModCommands)]
 		public async Task LocalExclude(CommandContext e, DiscordUser u)
 		{
 			try
