@@ -28,58 +28,54 @@ namespace Sylt51bot
 
 				RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
 
-				if (s.timedoutedusers.ContainsKey(e.Message.Author.Id) && DateTime.Now - s.timedoutedusers[e.Message.Author.Id] >= s.CoolDown)
-				{
-					s.timedoutedusers[e.Message.Author.Id] = DateTime.Now;
-					AddXp(e);
-				}
-				else
+				if (!s.timedoutedusers.ContainsKey(e.Message.Author.Id))
 				{
 					s.timedoutedusers.Add(e.Message.Author.Id, DateTime.Now);
+					AddXp(e);
+				}
+				
+				if(DateTime.Now - s.timedoutedusers[e.Message.Author.Id] >= s.CoolDown)
+				{
+					s.timedoutedusers[e.Message.Author.Id] = DateTime.Now;
 					AddXp(e);
 				}
 
 				int userslevel = 0;
 				int j = 0;
-				bool isDone = false;
+				bool hasChanged = false;
 				try
 				{
 					foreach (LevelRole i in s.lvlroles)
 					{
+						if(i.RoleId == 0)
+						{
+							continue;
+						}
+
 						if (i.XpReq <= s.xplist[e.Author.Id] && i.RoleId != 0)
 						{
 							userslevel++;
 							j++;
-							if ((await e.Guild.GetMemberAsync(e.Author.Id)).Roles.ToList().FindIndex(x => x.Id == i.RoleId) != -1)
+							if (!(await e.Guild.GetMemberAsync(e.Author.Id)).Roles.Any(x => x.Id == i.RoleId))
 							{
 								await (await e.Guild.GetMemberAsync(e.Author.Id)).GrantRoleAsync(e.Guild.GetRole(i.RoleId));
-								if (j == s.lvlroles.Count - 1)
-								{
-									isDone = true;
-									break;
-								}
+								hasChanged = true;
 							}
 
 						}
 						else
 						{
 							j++;
-							if ((await e.Guild.GetMemberAsync(e.Author.Id)).Roles.ToList().FindIndex(x => x.Id == i.RoleId) != -1)
+							if ((await e.Guild.GetMemberAsync(e.Author.Id)).Roles.Any(x => x.Id == i.RoleId))
 							{
 								await (await e.Guild.GetMemberAsync(e.Author.Id)).RevokeRoleAsync(e.Guild.GetRole(s.lvlroles.Find(x => x.RoleId == i.RoleId).RoleId));
-								if (j == s.lvlroles.Count - 1)
-								{
-									isDone = true;
-									break;
-								}
 							}
 						}
 					}
-					if (isDone == true)
+					if (hasChanged == true)
 					{
-						await discord.SendMessageAsync(e.Channel, new DiscordEmbedBuilder { Description = $"**{e.Author.Mention}**'s wurde aufgelevelt zu **{userslevel}**!", Color = DiscordColor.Green });
+						await discord.SendMessageAsync(e.Channel, new DiscordEmbedBuilder { Description = $"**{e.Author.Mention}**'s wurde aufgeleveled zu **{userslevel}**!", Color = DiscordColor.Green });
 					}
-					servers[servers.FindIndex(x => x.Id == e.Guild.Id)].xplist[e.Message.Author.Id] = s.xplist[e.Message.Author.Id];
 					File.WriteAllText("config/RegServers.json", JsonConvert.SerializeObject(servers, Formatting.Indented));
 				}
 				catch (DSharpPlus.Exceptions.UnauthorizedException)

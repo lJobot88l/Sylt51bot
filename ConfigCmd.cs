@@ -65,13 +65,15 @@ namespace Sylt51bot
 			try
 			{
 				RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
+				int oldamt = s.MinXp;
 				if(newxp <= 0 || newxp >= s.MaxXp)
 				{
 					await e.Message.RespondAsync(new DiscordEmbedBuilder { Description = $"Die neue MinXp-Anzahl muss größer als 0, und kleiner als MaxXp sein!\n```Angegebene Anzahl: {newxp}\nMaxXp: {s.MaxXp}```", Color = DiscordColor.Red});
 					return;
 				}
-				servers.Find(x => x.Id == s.Id).MinXp = newxp;
-				await e.RespondAsync(new DiscordEmbedBuilder { Description = $"MinXp wurde aktualisiert!\n```Vorher: {s.MinXp}\nJetzt: {newxp}", Color = DiscordColor.Green});
+				s.MinXp = newxp;
+				await e.RespondAsync(new DiscordEmbedBuilder { Description = $"MinXp wurde aktualisiert!\n```Vorher: {oldamt}\nJetzt: {newxp}```", Color = DiscordColor.Green});
+				File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Newtonsoft.Json.Formatting.Indented));
 			}
 			catch (Exception ex)
 			{
@@ -85,13 +87,15 @@ namespace Sylt51bot
 			try
 			{
 				RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
+				int oldamt = s.MaxXp;
 				if (newxp <= s.MinXp)
 				{
 					await e.Message.RespondAsync(new DiscordEmbedBuilder { Description = $"Die neue MaxXp-Anzahl muss größer als MinXp sein!\n```Angegebene Anzahl: {newxp}\nMinXp: {s.MinXp}```", Color = DiscordColor.Red });
 					return;
 				}
-				servers.Find(x => x.Id == s.Id).MaxXp = newxp;
-				await e.RespondAsync(new DiscordEmbedBuilder { Description = $"MaxXp wurde aktualisiert!\n```Vorher: {s.MaxXp}\nJetzt: {newxp}", Color = DiscordColor.Green });
+				s.MaxXp = newxp;
+				await e.RespondAsync(new DiscordEmbedBuilder { Description = $"MaxXp wurde aktualisiert!\n```Vorher: {oldamt}\nJetzt: {newxp}```", Color = DiscordColor.Green });
+				File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Newtonsoft.Json.Formatting.Indented));
 
 			}
 			catch (Exception ex)
@@ -101,18 +105,28 @@ namespace Sylt51bot
 		}
 
 		[Command("cooldown"), Description("Ändert das Zeitintervall für den Cooldown zwischen einem xp-erhalt und dem nächsten\nBenutzung:\n```config cooldown <Neue Cooldownzeit>```"), CommandClass(CommandClasses.ConfigCommands), RequireUserPermissions2(DSharpPlus.Permissions.ManageGuild)]
-		public async Task SetCoolDown(CommandContext e, TimeSpan d)
+		public async Task SetCoolDown(CommandContext e, string d)
 		{
 			try
 			{
 				RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
-				if(d.Milliseconds <= 0)
+				TimeSpan dt;
+				TimeSpan oldamt = s.CoolDown;
+				if(!TimeSpan.TryParse(d, new System.Globalization.CultureInfo("de-DE"), out dt))
 				{
-					await e.RespondAsync(new DiscordEmbedBuilder { Description = "Die Cooldownzeit muss größer als oder gleich zu 0 sein"});
+					await e.RespondAsync(new DiscordEmbedBuilder { Description = "Ungültiges Format", Color = DiscordColor.Red });
 					return;
 				}
-				servers.Find(x => x.Id == e.Guild.Id).CoolDown = d;
-				await e.RespondAsync(new DiscordEmbedBuilder { Description = $"MaxXp wurde aktualisiert!\n```Vorher: {s.CoolDown.ToString("HH:mm:ss")}\nJetzt: {d.ToString("HH:mm:ss")}", Color = DiscordColor.Green });
+
+				if(dt.TotalMilliseconds < 0)
+				{
+					await e.RespondAsync(new DiscordEmbedBuilder { Description = "Die Cooldownzeit muss größer als oder gleich zu 0 sein", Color = DiscordColor.Red });
+					return;
+				}
+
+				s.CoolDown = dt;
+				await e.RespondAsync(new DiscordEmbedBuilder { Description = $"Cooldown wurde aktualisiert!\n```Vorher: {oldamt}\nJetzt: {dt}```", Color = DiscordColor.Green });
+				File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Newtonsoft.Json.Formatting.Indented));
 			}
 			catch (Exception ex)
 			{
@@ -147,7 +161,7 @@ namespace Sylt51bot
 					servers.Find(x => x.Id == e.Guild.Id).EnabledModules ^= mod;
 					embed.Description = $"Modul **`{mod}`** wurde geändert";
 					await e.RespondAsync(embed: embed);
-					File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers));
+					File.WriteAllText("config/RegServers.json", Newtonsoft.Json.JsonConvert.SerializeObject(servers, Newtonsoft.Json.Formatting.Indented));
 				}
 				else
 				{

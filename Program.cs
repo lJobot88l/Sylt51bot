@@ -143,6 +143,7 @@ namespace Sylt51bot
 							}
 						}
 					}
+					LevelSystem.DoTheTimer(e);
                 };
 
 				discord.GuildCreated += (client, e) =>
