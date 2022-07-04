@@ -13,7 +13,7 @@ namespace Sylt51bot
 {
 	public class BotAdminCommands : BaseCommandModule
 	{
-		[Command("addauth"), CommandClass(Classes.CommandClasses.OwnerCommands), Description("Fügt/Entfernt einen Benutzer aus der Liste der Adminbots\n\nBenutzung:\n```=addauth < ID / @mention >```"), RequireAuth()]
+		[Command("addauth"), CommandClass(Classes.CommandClasses.OwnerCommands), Description("Fügt/Entfernt einen Benutzer aus der Liste der Adminbots\n\nBenutzung:\n```addauth < ID / @mention >```"), RequireAuth()]
 		public async Task AddAuth(CommandContext e, DiscordUser NewAdmin)
 		{
 			try
@@ -35,7 +35,7 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("status"), CommandClass(Classes.CommandClasses.OwnerCommands), Description("Setzt den Botstatus zum angegebenen Text. \"clear\" um den Text Blank zu machen.\n\nBenutzung:\n```=status <New Status>```"), RequireAuth()]
+		[Command("status"), CommandClass(Classes.CommandClasses.OwnerCommands), Description("Setzt den Botstatus zum angegebenen Text. \"clear\" um den Text Blank zu machen.\n\nBenutzung:\n```status <New Status>```"), RequireAuth()]
 		public async Task Status(CommandContext e, [RemainingText] string NewStatus)
 		{
 			try
@@ -60,7 +60,7 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("resetschulden"), Description("Bearbeitet die Schulden der DDR!\n\nBenutzung:\n```=resetschulden (DMark)```"), CommandClass(Classes.CommandClasses.OwnerCommands), RequireAuth()]
+		[Command("resetschulden"), Description("Bearbeitet die Schulden der DDR!\n\nBenutzung:\n```resetschulden (DMark)```"), CommandClass(Classes.CommandClasses.OwnerCommands), RequireAuth()]
 		public async Task ResetSchulden(CommandContext e, long newSchulden = 86000000000)
 		{
 			try
@@ -86,7 +86,7 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("globalexclude"), Description("Exkludiert einen Nutzer global vom Benutzen des Bots\n\nBenutzung:\n```=globalexclude < ID / @mention >```"), RequireAuth, CommandClass(Classes.CommandClasses.OwnerCommands), IsExclude]
+		[Command("globalexclude"), Description("Exkludiert einen Nutzer global vom Benutzen des Bots\n\nBenutzung:\n```globalexclude < ID / @mention >```"), RequireAuth, CommandClass(Classes.CommandClasses.OwnerCommands), IsExclude]
 		public async Task GlobalExclude(CommandContext e, DiscordUser u)
 		{
 			try

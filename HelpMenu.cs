@@ -21,7 +21,6 @@ namespace Sylt51bot
 		public CustomHelpFormatter(CommandContext ctx) : base(ctx)
 		{
 			_embed = new DiscordEmbedBuilder();
-
 			// _strBuilder = new StringBuilder();
 
 			// Help formatters do support dependency injection.
@@ -77,7 +76,7 @@ namespace Sylt51bot
 		public override BaseHelpFormatter WithSubcommands(IEnumerable<Command> cmds)
 		{
 			_embed.Title = "Hilfe";
-			_embed.Description = "Mehr Informationen über einen Befehl mit `=help <befehlname>`";
+			_embed.Description = "Mehr Informationen über einen Befehl mit `help <befehlname>`";
 			_embed.Color = DiscordColor.Green;
 
 			foreach (var cclass in Enum.GetValues(typeof(Classes.CommandClasses)))

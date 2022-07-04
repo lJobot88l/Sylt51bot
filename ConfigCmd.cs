@@ -9,9 +9,10 @@ using DSharpPlus.CommandsNext.Attributes;
 using static Sylt51bot.Program;
 namespace Sylt51bot
 {
+	[Group("config"), Description("Beinhaltet Befehle für die Konfiguration innerhalb des servers\n\nBenutzung:\n```config <befehlname>```"), IsExclude(), CommandClass(CommandClasses.ConfigCommands)]
 	public class ConfigCommands : BaseCommandModule
 	{
-		[Command("config"), Description("Zeigt die aktuelle Konfiguration des servers\n\nBenutzung:\n```=config```"), CommandClass(CommandClasses.ConfigCommands), IsExclude()]
+		[Command("show"), Description("Zeigt die aktuelle Konfiguration des servers\n\nBenutzung:\n```config show```"), CommandClass(CommandClasses.ConfigCommands)]
 		public async Task ListCfg(CommandContext e, string format = "n")
 		{
 			try
@@ -44,9 +45,9 @@ namespace Sylt51bot
 					$"```Id: {s.Id.ToString()}\nName: {e.Guild.Name}```");
 					embed.AddField("Module", $"```{enModules}```");
 					if(!string.IsNullOrEmpty(lvlroles)) { embed.AddField("Levelrollen", $"```{lvlroles}```"); }
-					embed.AddField("Xp Optionen", $"```Mindest vergebenes xp: {s.MinXp}xp\nMaximal vergebenes xp: {s.MaxXp}xp\nXp cooldown: {s.CoolDown}```");
+					embed.AddField("Xp Optionen", $"```MinXp: {s.MinXp}xp\nMaxXp: {s.MaxXp}xp\nXp cooldown: {s.CoolDown}```");
 				}
-				if(format == "json")
+				else if(format == "json")
 				{
 					embed.Description = $"```json\n{Newtonsoft.Json.JsonConvert.SerializeObject(s, Newtonsoft.Json.Formatting.Indented)}```";
 				}
@@ -58,7 +59,67 @@ namespace Sylt51bot
 			}
 		}
 
-		[Command("togglemodule"), Description("Schaltet ein Modul an oder aus\n\nBenutzung:\n```=togglemodule <Modulname>```"), CommandClass(CommandClasses.ConfigCommands), RequireUserPermissions2(DSharpPlus.Permissions.ManageGuild)]
+		[Command("minxp"), Description("Ändert die mindestanzahl an erhaltbaren xp pro nachricht im jeweiligen Zeitinterval.\n\nBenutzung:\n```config minxp <anzahl>```"), CommandClass(CommandClasses.ConfigCommands), RequireUserPermissions2(DSharpPlus.Permissions.ManageGuild)]
+		public async Task SetMinXp(CommandContext e, int newxp)
+		{
+			try
+			{
+				RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
+				if(newxp <= 0 || newxp >= s.MaxXp)
+				{
+					await e.Message.RespondAsync(new DiscordEmbedBuilder { Description = $"Die neue MinXp-Anzahl muss größer als 0, und kleiner als MaxXp sein!\n```Angegebene Anzahl: {newxp}\nMaxXp: {s.MaxXp}```", Color = DiscordColor.Red});
+					return;
+				}
+				servers.Find(x => x.Id == s.Id).MinXp = newxp;
+				await e.RespondAsync(new DiscordEmbedBuilder { Description = $"MinXp wurde aktualisiert!\n```Vorher: {s.MinXp}\nJetzt: {newxp}", Color = DiscordColor.Green});
+			}
+			catch (Exception ex)
+			{
+				await AlertException(e, ex);
+			}
+		}
+
+		[Command("maxxp"), Description("Ändert die maximalanzahl an erhaltbaren xp pro nachricht im jeweiligen Zeitinterval.\n\nBenutzung:\n```config maxxp <anzahl>```"), CommandClass(CommandClasses.ConfigCommands), RequireUserPermissions2(DSharpPlus.Permissions.ManageGuild)]
+		public async Task SetMaxXp(CommandContext e, int newxp)
+		{
+			try
+			{
+				RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
+				if (newxp <= s.MinXp)
+				{
+					await e.Message.RespondAsync(new DiscordEmbedBuilder { Description = $"Die neue MaxXp-Anzahl muss größer als MinXp sein!\n```Angegebene Anzahl: {newxp}\nMinXp: {s.MinXp}```", Color = DiscordColor.Red });
+					return;
+				}
+				servers.Find(x => x.Id == s.Id).MaxXp = newxp;
+				await e.RespondAsync(new DiscordEmbedBuilder { Description = $"MaxXp wurde aktualisiert!\n```Vorher: {s.MaxXp}\nJetzt: {newxp}", Color = DiscordColor.Green });
+
+			}
+			catch (Exception ex)
+			{
+				await AlertException(e, ex);
+			}
+		}
+
+		[Command("cooldown"), Description("Ändert das Zeitintervall für den Cooldown zwischen einem xp-erhalt und dem nächsten\nBenutzung:\n```config cooldown <Neue Cooldownzeit>```"), CommandClass(CommandClasses.ConfigCommands), RequireUserPermissions2(DSharpPlus.Permissions.ManageGuild)]
+		public async Task SetCoolDown(CommandContext e, TimeSpan d)
+		{
+			try
+			{
+				RegisteredServer s = servers.Find(x => x.Id == e.Guild.Id);
+				if(d.Milliseconds <= 0)
+				{
+					await e.RespondAsync(new DiscordEmbedBuilder { Description = "Die Cooldownzeit muss größer als oder gleich zu 0 sein"});
+					return;
+				}
+				servers.Find(x => x.Id == e.Guild.Id).CoolDown = d;
+				await e.RespondAsync(new DiscordEmbedBuilder { Description = $"MaxXp wurde aktualisiert!\n```Vorher: {s.CoolDown.ToString("HH:mm:ss")}\nJetzt: {d.ToString("HH:mm:ss")}", Color = DiscordColor.Green });
+			}
+			catch (Exception ex)
+			{
+				await AlertException(e, ex);
+			}
+		}
+		[Command("togglemodule"), Description("Schaltet ein Modul an oder aus\n\nBenutzung:\n```config togglemodule <Modulname>```"), CommandClass(CommandClasses.ConfigCommands), RequireUserPermissions2(DSharpPlus.Permissions.ManageGuild)]
 		public async Task ToggleModule(CommandContext e, string ModuleName = "help")
 		{
 			try
